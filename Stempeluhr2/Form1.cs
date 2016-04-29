@@ -494,7 +494,7 @@ namespace Stempeluhr2
             {
                 count = int.Parse(comm.ExecuteScalar()+"");
             }
-            catch (MySql.Data.MySqlClient.MySqlException ex)
+            catch (Exception ex)
             {
                 log(ex.Message);
             }
