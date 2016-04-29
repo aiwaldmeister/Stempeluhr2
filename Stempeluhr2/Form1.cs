@@ -39,6 +39,10 @@ namespace Stempeluhr2
         string activetask = "";
         string activetask_zeitbisher = "";
 
+        string letztewartungstring = "";
+
+
+
 
         MySql.Data.MySqlClient.MySqlConnection conn = new MySql.Data.MySqlClient.MySqlConnection();
         MySql.Data.MySqlClient.MySqlCommand comm = new MySql.Data.MySqlClient.MySqlCommand();
@@ -252,11 +256,55 @@ namespace Stempeluhr2
             Zeitanzeige.Text = stunde + ":" + minute + ":" + sekunde;
             Datumsanzeige.Text = DateTime.Now.ToShortDateString();
 
-            //Debugausgabe auf Konsole
-            //Console.WriteLine("Zeitwerte gesetzt... (jahr:" + jahr + " monat:" + monat + " tag:" + tag + " stunde:" + 
-            //                    stunde + " minute:" +  minute + " sekunde:" + sekunde+ " zeiteinheit:" + zeiteinheit);
+
+            if (stunde == "23" && minute.EndsWith("0") && sekunde == "00")
+            {   //ab 23Uhr alle 10 minute versuchen einen wartungslauf anzustoßen
+                string heutigesdatumstring = jahr + monat + tag;
+
+                if(letztewartungstring == "")
+                {   //letztewartung ist nicht bekannt -> datum aus datenbank holen
+                    
+                    //TODO Datum der letzten wartung aus db holen und in letztewartungstring speichern
+                }
+
+                if(int.Parse(heutigesdatumstring) > int.Parse(letztewartungstring))
+                {   //Die letzte wartung war nicht heute also durchführen
+
+                    //wenn letzte wartung früher als heute war, einen tag später wartung durchführen
+                  
+
+                    offeneStempelungenSchliessen();
+                    //stundenkontenBerechnen(wartungsjahr, wartungsmonat, wartungstag);
+
+                    //TODO wartungstag, wartungsmonat, wartungsjahr setzen in db und globaler variable
+                    //letztewartungstring = letztewartungjahr + letztewartungmonat + letztewartungtag;
+                }
+                
+            }
 
         }
+        private void offeneStempelungenSchliessen()
+        {   //suche nach offenen Abstempelungen
+
+            //TODO personen suchen die noch eingestempelt sind (merken wer und auf welchen auftrag und wann angestempelt)
+            //TODO jeweils eine abstempelung setzen... falls anstempelung nach 17:29 eine minute später, sonst um 17:30
+            //
+
+        }
+        private void stundenkontenBerechnen()
+        {
+            //TODO alle personen in der Datenbank suchen und zwischenspeichern
+
+            //TODO für jede person ermitteln auf dem stand welchen tages Zeitkontenberechnung ist
+            //TODO für jede person ermittleIstzeit aufrufen
+            //TODO für jede person ermittleSollzeit aufrufen
+
+        }
+        private void ermittleIstzeit(string Auswertungsperson, string Auswertungstag, string Auswertungsmonat, string Auswertungsjahr)
+        {
+            //TODO prüfen ob 
+        }
+
         private void countdowntimer_Tick(object sender, EventArgs e)
         {
             if (countdown > 0)
