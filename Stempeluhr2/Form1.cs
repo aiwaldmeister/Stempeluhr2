@@ -393,7 +393,7 @@ namespace Stempeluhr2
             open_db();
             comm.CommandText = "INSERT INTO stamps (userid,task,art,jahr,monat,tag,stunde,minute,sekunde,dezimal,quelle) "+
                                 "VALUES ('"+ user + "','" + auftrag +"','ab','" + jahr +"','" + monat +"','" + 
-                                tag +"','" + stunde +"','" + minute + "','" + sekunde +"','" + zeiteinheit + "','INSERT')";
+                                tag +"','" + stunde +"','" + minute + "','" + sekunde +"','" + zeiteinheit + "','stempeluhr')";
             try
             {
                 comm.ExecuteNonQuery();
@@ -481,7 +481,8 @@ namespace Stempeluhr2
         }
         private bool einloggen(string usercode)
         {
-            
+
+            MySql.Data.MySqlClient.MySqlDataReader Reader;
             int count = -1;
 
             string username = "";
@@ -493,18 +494,99 @@ namespace Stempeluhr2
             try
             {
                 count = int.Parse(comm.ExecuteScalar()+"");
-            }
-            catch (Exception ex)
-            {
-                log(ex.Message);
-            }
+            }catch(Exception ex){log(ex.Message);}
             close_db();
 
             if(count == 1)
             {   //User gefunden... einloggen
                 open_db();
+
+
+                ///////////////////// eventuelle Wartungen ////////////////////
+                int stempelungenheute = 0;
+                comm.CommandText = "SELECT count(*) FROM stamps where userid='" + usercode + "' AND tag='" + tag +"' AND monat='" + monat + "' AND jahr = '" + jahr +"'";
+                try
+                {
+                    stempelungenheute = int.Parse(comm.ExecuteScalar() + "");
+                }catch (Exception ex){log(ex.Message);}
+
+                if(stempelungenheute == 0)
+                {   //es gab noch keine stempelungen für diese person heute -> prüfen ob der stand sauber ist
+                    log("Noch keine Stempelungen heute auf " + usercode + ". Prüfe ob Wartung nötig...");
+                    
+                    //prüfen ob der zeitkonto_berechnungsstand weiter zurückliegt als gestern(abend)
+                    string berechnungsstand_string = "";
+                    comm.CommandText = "SELECT zeitkonto_berechnungsstand FROM user where userid='" + usercode + "'";
+                    try
+                    {
+                        berechnungsstand_string = comm.ExecuteScalar() + "";
+                    }
+                    catch (Exception ex) { log(ex.Message); }
+
+                    DateTime datum_gestern = DateTime.Now.AddDays(-1);
+                    DateTime datum_zeitberechnung = DateTime.ParseExact(berechnungsstand_string,"yyyyMMdd",null);
+
+                    if (DateTime.Compare(datum_zeitberechnung,datum_gestern) < 0) 
+                    {   //Berechnungsstand liegt weiter zurück als gestern -> auf stand von gestern bringen
+
+                        //TODO dazu ersteinmal den letzen gestempelten tag sauber schliessen
+                        //TODO dazu den letzten tag mit stempelungen suchen und prüfen ob alles abgestempelt ist
+                        comm.CommandText = "select * from stamps where userid = '" + usercode + "' order by jahr DESC, monat desc, tag DESC, stunde desc, minute desc, sekunde desc, art desc limit 1";
+                        Reader = comm.ExecuteReader();
+                        //Read the data and store them in the list
+                        Reader.Read();
+                        string letztestempelung_art = Reader["art"] + "";
+                        string letztestempelung_auftrag = Reader["task"] + "";
+                        string letztestempelung_jahr = Reader["jahr"] + "";
+                        string letztestempelung_monat = Reader["monat"] + "";
+                        string letztestempelung_tag = Reader["tag"] + "";
+                        string letztestempelung_stunde = Reader["stunde"] + "";
+                        string letztestempelung_minute = Reader["minute"] + "";
+                        string letztestempelung_sekunde = Reader["sekunde"] + "";
+                        string letztestempelung_zeiteinheit = Reader["dezimal"] + "";
+                        Reader.Close();
+
+                        if(letztestempelung_art != "ab")
+                        {   //letzte stempelung ist keine abstempelung -> nötige daten ermitteln und abstempeln
+                            log("Letzter Auftrag ist nich abgestempelt...");
+                            comm.CommandText = "INSERT INTO stamps (userid,task,art,jahr,monat,tag,stunde,minute,sekunde,dezimal,quelle) " +
+                                               "VALUES ('" + usercode + "','" + letztestempelung_auftrag + "','ab','" + letztestempelung_jahr + "','" + 
+                                               letztestempelung_monat + "','" + letztestempelung_tag + "','" + letztestempelung_stunde + "','" + 
+                                               letztestempelung_minute + "','" + letztestempelung_sekunde + "','" + letztestempelung_zeiteinheit + "','wartung')";
+                            try
+                            {
+                                comm.ExecuteNonQuery();
+                                log("Automatische Abstempelung. SQL:" + comm.CommandText);
+                            }
+                            catch (MySql.Data.MySqlClient.MySqlException ex){log(ex.Message);}
+                        }
+
+                        //TODO dann tag für tag istzeit berechnen, mit sollzeit abgleichen, auf zeitkonto anrechnen bis zeitkontostand bei gestern abend ist
+                        while (DateTime.Compare(datum_zeitberechnung, datum_gestern) < 0)
+                        {
+                            DateTime berechnungsdatum = datum_zeitberechnung.AddDays(1).Date;
+                            string berechnungsjahr = berechnungsdatum.Year.ToString("D4");
+                            string berechnungsmonat = berechnungsdatum.Month.ToString("D2");
+                            string berechnungstag = berechnungsdatum.Day.ToString("D2");
+
+                            int berechneteIstZeit = ermittleIstZeit(usercode, berechnungsjahr, berechnungsmonat, berechnungstag);
+                            int berechneteSollZeit = ermittleSollZeit(usercode, berechnungsjahr, berechnungsmonat, berechnungstag);
+                            int berechneteUeberstunden = berechneteIstZeit - berechneteSollZeit;
+
+
+
+
+
+                        }
+
+                    }
+
+                    //////// wartungen abgeschlossen
+
+                }    
+
                 comm.CommandText = "SELECT name, vorname, currenttask FROM user where userid='" + usercode + "'";
-                MySql.Data.MySqlClient.MySqlDataReader Reader = comm.ExecuteReader();
+                Reader = comm.ExecuteReader();
                 //Read the data and store them in the list
                 Reader.Read();
                 username = Reader["vorname"] + " " +  Reader["name"] + "";
