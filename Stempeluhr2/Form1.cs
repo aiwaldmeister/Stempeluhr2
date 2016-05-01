@@ -219,7 +219,6 @@ namespace Stempeluhr2
             else if (zielstatus == "userinfos")
             {
                 message(statusmeldung);
-                //TODO details anzeigen
                 Stempelliste.Visible = true;
                 Detailanzeige.Visible = true;
                 status = "userinfos";
@@ -469,6 +468,7 @@ namespace Stempeluhr2
                     }
                     Stempelliste.Items.Add(listViewItem);
                 }
+                Reader.Close();
                 close_db();
             }
             catch (MySql.Data.MySqlClient.MySqlException ex)
@@ -524,16 +524,15 @@ namespace Stempeluhr2
                     catch (Exception ex) { log(ex.Message); }
 
                     DateTime datum_gestern = DateTime.Now.AddDays(-1);
-                    DateTime datum_zeitberechnung = DateTime.ParseExact(berechnungsstand_string,"yyyyMMdd",null);
+                    DateTime datum_letzte_zeitberechnung = DateTime.ParseExact(berechnungsstand_string,"yyyyMMdd",null);
 
-                    if (DateTime.Compare(datum_zeitberechnung,datum_gestern) < 0) 
+                    if (DateTime.Compare(datum_letzte_zeitberechnung,datum_gestern) < 0) 
                     {   //Berechnungsstand liegt weiter zurück als gestern -> auf stand von gestern bringen
+                        log("Letzte Zeitberechnung war am " + datum_letzte_zeitberechnung.ToLongDateString() + ". -> Bringe auf Stand von gestern.");
 
-                        //TODO dazu ersteinmal den letzen gestempelten tag sauber schliessen
-                        //TODO dazu den letzten tag mit stempelungen suchen und prüfen ob alles abgestempelt ist
+                        //den letzen gestempelten tag sauber schliessen
                         comm.CommandText = "select * from stamps where userid = '" + usercode + "' order by jahr DESC, monat desc, tag DESC, stunde desc, minute desc, sekunde desc, art desc limit 1";
                         Reader = comm.ExecuteReader();
-                        //Read the data and store them in the list
                         Reader.Read();
                         string letztestempelung_art = Reader["art"] + "";
                         string letztestempelung_auftrag = Reader["task"] + "";
@@ -548,7 +547,9 @@ namespace Stempeluhr2
 
                         if(letztestempelung_art != "ab")
                         {   //letzte stempelung ist keine abstempelung -> nötige daten ermitteln und abstempeln
-                            log("Letzter Auftrag ist nich abgestempelt...");
+                            log("Letzter Auftrag (" + letztestempelung_auftrag + ") am "+ letztestempelung_tag + "." + letztestempelung_monat + "." + letztestempelung_jahr + " wurde nicht abgestempelt...");
+                            
+
                             comm.CommandText = "INSERT INTO stamps (userid,task,art,jahr,monat,tag,stunde,minute,sekunde,dezimal,quelle) " +
                                                "VALUES ('" + usercode + "','" + letztestempelung_auftrag + "','ab','" + letztestempelung_jahr + "','" + 
                                                letztestempelung_monat + "','" + letztestempelung_tag + "','" + letztestempelung_stunde + "','" + 
@@ -556,26 +557,52 @@ namespace Stempeluhr2
                             try
                             {
                                 comm.ExecuteNonQuery();
-                                log("Automatische Abstempelung. SQL:" + comm.CommandText);
+                                log("Automatische Abstempelung wird eingetragen. SQL:" + comm.CommandText);
                             }
                             catch (MySql.Data.MySqlClient.MySqlException ex){log(ex.Message);}
+
+                            //TODO Irgendwo auf die Automatische-Stempelung hinweisen
                         }
 
-                        //TODO dann tag für tag istzeit berechnen, mit sollzeit abgleichen, auf zeitkonto anrechnen bis zeitkontostand bei gestern abend ist
-                        while (DateTime.Compare(datum_zeitberechnung, datum_gestern) < 0)
+                        //tag für tag istzeit berechnen, mit sollzeit abgleichen, auf zeitkonto anrechnen bis zeitkontostand bei gestern abend ist
+                        while (DateTime.Compare(datum_letzte_zeitberechnung, datum_gestern) < 0)
                         {
-                            DateTime berechnungsdatum = datum_zeitberechnung.AddDays(1).Date;
+                            DateTime berechnungsdatum = datum_letzte_zeitberechnung.AddDays(1).Date;
                             string berechnungsjahr = berechnungsdatum.Year.ToString("D4");
                             string berechnungsmonat = berechnungsdatum.Month.ToString("D2");
                             string berechnungstag = berechnungsdatum.Day.ToString("D2");
 
-                            int berechneteIstZeit = ermittleIstZeit(usercode, berechnungsjahr, berechnungsmonat, berechnungstag);
-                            int berechneteSollZeit = ermittleSollZeit(usercode, berechnungsjahr, berechnungsmonat, berechnungstag);
-                            int berechneteUeberstunden = berechneteIstZeit - berechneteSollZeit;
+                            double berechneteIstZeit = ermittleIstZeit(usercode, berechnungsjahr, berechnungsmonat, berechnungstag);
+                            double berechneteSollZeit = ermittleSollZeit(usercode, berechnungsjahr, berechnungsmonat, berechnungstag);
+                            double berechneteUeberstunden = berechneteIstZeit - berechneteSollZeit;
+                            double zeitkontostand_bisher = 0;
+                            double zeitkontostand_neu = 0;
 
+                            //bisherigen zeitkontostand abfragen
+                            comm.CommandText = "SELECT zeitkonto FROM user where userid='" + usercode + "'";
+                            try
+                            {
+                                zeitkontostand_bisher = double.Parse(comm.ExecuteScalar() + "");
+                            }catch (Exception ex) { log(ex.Message); }
 
+                            zeitkontostand_neu = zeitkontostand_bisher + berechneteUeberstunden;
+                            
 
-
+                            //neuen zeitkontostand beim Mitarbeiter eintragen und berechnungsstand auf das berechnungsdatum setzen
+                            comm.CommandText = "UPDATE user SET zeitkonto='" + zeitkontostand_neu + 
+                                                "',zeitkonto_berechnungsstand = '" + berechnungsjahr + berechnungsmonat + berechnungstag + 
+                                                "' where userid = '" + usercode + "'";
+                            try
+                            {
+                                comm.ExecuteNonQuery();
+                                log("Zeitkonto aktualisiert. SQL:" + comm.CommandText);
+                            }
+                            catch (MySql.Data.MySqlClient.MySqlException ex)
+                            {
+                                log(ex.Message);
+                            }
+                            datum_letzte_zeitberechnung = berechnungsdatum;
+                            log("Zeitberechnung ist jetzt auf dem Stand vom " + datum_letzte_zeitberechnung.ToLongDateString());
 
                         }
 
@@ -663,6 +690,142 @@ namespace Stempeluhr2
                 return false;
             }
 
+
+        }
+        private double ermittleIstZeit(string usercode, string berechnungsjahr, string berechnungsmonat, string berechnungstag)
+        {   
+            double Istzeit_tmp = 0;
+            double Pausenzeit_tmp = 0;
+            string Fehler = "";
+
+            open_db();
+            comm.CommandText = "SELECT * FROM stamps WHERE userid = '" + usercode + "' AND jahr = '" + berechnungsjahr + 
+                                "' AND monat = '" + berechnungsmonat + "' AND tag = '" + berechnungstag + "' AND quelle != 'storniert' " +
+                                " ORDER BY jahr ASC, monat ASC, tag ASC, stunde ASC, minute ASC, sekunde ASC, art ASC";
+            MySql.Data.MySqlClient.MySqlDataReader Reader = comm.ExecuteReader();
+
+            while (Reader.Read())
+            {
+                //alle nötigen werte der anstempelung aus dem reader holen
+                string an_stunde = Reader["stunde"] + "";
+                string an_dezimal = Reader["dezimal"] + "";
+                string an_task = Reader["task"] + "";
+                double an_uhrzeit_dezimal = double.Parse(an_stunde + "," + an_dezimal);
+                
+                
+                Reader.Read();
+                //alle nötigen werte der abstempelung aus dem reader holen
+                string ab_stunde = Reader["stunde"] + "";
+                string ab_dezimal = Reader["dezimal"] + "";
+                string ab_task = Reader["task"] + "";
+                double ab_uhrzeit_dezimal = double.Parse(ab_stunde + "," + ab_dezimal);
+
+                if (an_task != ab_task)
+                {
+                    Fehler = "Zeitpaar passt nicht zusammen (verschiedene tasks)";
+                    log(Fehler);
+                }
+
+                if(an_task == "888001")
+                {   //Pausenstempelung
+
+                    Pausenzeit_tmp = Pausenzeit_tmp + ab_uhrzeit_dezimal - an_uhrzeit_dezimal;
+                }
+
+                if(an_task != "888000")
+                {   //keine Leerlaufstempelung -> Zeit komplett auf Istzeit anrechnen
+                    Istzeit_tmp = Istzeit_tmp + ab_uhrzeit_dezimal - an_uhrzeit_dezimal;
+                }
+                else
+                {   //Leerlaufstempelung
+                    if(an_uhrzeit_dezimal < 8)
+                    {//vor 8 Uhr angestempelt
+                        if(ab_uhrzeit_dezimal < 8)
+                        {//Leerlaufstempelung komplett vor 8 Uhr -> nicht auf Istzeit anrechnen
+
+                        }else
+                        {//Leerlaufstempelung teilweise vor 8 Uhr -> erst ab 8 Uhr auf Istzeit anrechnen
+                            Istzeit_tmp = Istzeit_tmp + ab_uhrzeit_dezimal - 8;
+                        }
+                    }else if(ab_uhrzeit_dezimal > 17.5)
+                    {//nach 17:30 abgestempelt
+                        if(an_uhrzeit_dezimal > 17.5)
+                        {//Leerlaufstempelung komplett nach 17:30 -> nicht auf Istzeit anrechnen
+
+                        }else
+                        {//Leerlaufstempelung teilweise nach 17:30 -> nur bis 17:30 auf Istzeit anrechnen
+                            Istzeit_tmp = Istzeit_tmp + 17.5 - an_uhrzeit_dezimal;
+                        }
+                    }
+                }
+
+            }
+
+            Istzeit_tmp = Istzeit_tmp - Pausenzeit_tmp;
+            
+
+                
+            //TODO schauen ob die Pausenzeit zu wenig für die Arbeitszeit ist
+
+
+            //TODO Fehlerflag prüfen und im Fehlerfall irgendwo einen hinweis hinterlassen
+
+
+
+            return Istzeit_tmp;
+        }
+        private double ermittleSollZeit(string usercode, string berechnungsjahr, string berechnungsmonat, string berechnungstag)
+        {   //sollzeit ermitteln (persoenlicher kalendereintrag > allgemeiner kalendereintrag > fallback(wochenende 0, sonst 7,2)
+            double sollzeit = 0;
+            object tmp = null;
+            string sollzeitquelle = "";
+            open_db();
+            comm.CommandText = "SELECT sollzeit FROM kalender where zuordnung='" + usercode + "' AND jahr = '" + berechnungsjahr + 
+                                "' AND monat = '" + berechnungsmonat+ "' AND tag = '" + berechnungstag + "'";
+            try
+            {
+                tmp = comm.ExecuteScalar();
+            }
+            catch (Exception ex) { log(ex.Message); }
+            close_db();
+
+            if (tmp != null)
+            {   //es gab einen persönlichen Kalendereintrag -> dessen Sollzeit verwenden
+                sollzeit = double.Parse(tmp + "");
+                sollzeitquelle = "persönlicher Kalendereintrag";
+            }else
+            {   //es gab keinen persönlichen Kalendereintrag -> suche allgemeinen
+                open_db();
+                comm.CommandText = "SELECT sollzeit FROM kalender where zuordnung='allgemein' AND jahr = '" + berechnungsjahr + 
+                                "' AND monat = '" + berechnungsmonat+ "' AND tag = '" + berechnungstag + "'";
+                try
+                {
+                    tmp = comm.ExecuteScalar();
+                }
+                catch (Exception ex) { log(ex.Message); }
+                close_db();
+                if (tmp != null)
+                {   //es gab einen allgemeinen Kalendereintrag -> dessen Sollzeit verwenden
+                    sollzeit = double.Parse(tmp + "");
+                    sollzeitquelle = "allgemeiner Kalendereintrag";
+                }else
+                {   //es gab weder einen persönlichen noch einen allgemeinen Kalendereintrag -> Sollzeit hängt vom Wochentag ab
+                    DateTime berechnungsdatum = DateTime.ParseExact(berechnungsjahr + berechnungsmonat + berechnungstag, "yyyyMMdd", null);
+                    int Wochentagscode = (int)berechnungsdatum.DayOfWeek;
+                    if (Wochentagscode == 0 || Wochentagscode == 6)
+                    {
+                        sollzeit = 0;
+                        sollzeitquelle = "normaler Wochenendstag";
+                    }
+                    else
+                    {
+                        sollzeit = 7.2;
+                        sollzeitquelle = "normaler Werktag";
+                    }
+                }
+            }
+            log("Ermittelte Sollzeit für " + berechnungstag + "." + berechnungsmonat + "." + berechnungsjahr + ": " + sollzeit + " (" + sollzeitquelle + ")" );
+            return sollzeit;
 
         }
         private void textBox1_TextChanged(object sender, EventArgs e)
