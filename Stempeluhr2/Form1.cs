@@ -46,6 +46,9 @@ namespace Stempeluhr2
         System.Media.SoundPlayer Sound = new System.Media.SoundPlayer();
 
 
+
+
+
         string logfilename_global;
 
         public Form1()
@@ -172,7 +175,7 @@ namespace Stempeluhr2
             countdownbar.Visible = false;
         }
         private void playsound(string soundart)
-        {//TODO passende soundfiles besorgen und zur exe legen
+        {
             if (soundart == "error")
             {
                 Sound.SoundLocation = "error.wav";
@@ -189,10 +192,6 @@ namespace Stempeluhr2
                     Sound.Play();
                 }
                 catch (Exception) { log("soundfile erfolg.wav nicht gefunden"); }
-            }else
-            {
-                //Sound.SoundLocation = "default.wav";
-                //Sound.Play;
             }
 
         }
@@ -263,7 +262,7 @@ namespace Stempeluhr2
                 activetask_global = "";
                 log("Status auf 'error' gesetzt. (" + statusmeldung + ")");
                 setCountdown(2);
-                playsound("erfolg");
+                playsound("error");
 
             }
             else if (zielstatus == "userinfos")
@@ -401,7 +400,8 @@ namespace Stempeluhr2
             open_db();
             comm.CommandText = "INSERT INTO stamps (userid,task,art,jahr,monat,tag,stunde,minute,sekunde,dezimal,quelle) " +
                                 "VALUES ('" + user + "','" + auftrag + "','an','" + jahr_global + "','" + monat_global + "','" +
-                                tag_global + "','" + stunde_global + "','" + minute_global + "','" + sekunde_global + "','" + zeiteinheit_global + "','INSERT')";
+                                tag_global + "','" + stunde_global + "','" + minute_global + "','" + sekunde_global + "','" + zeiteinheit_global + "','stempeluhr')";
+            log("SQL:" + comm.CommandText);
             try
             {
                 comm.ExecuteNonQuery();
@@ -412,6 +412,7 @@ namespace Stempeluhr2
             }
 
             comm.CommandText = "UPDATE user SET currenttask='" + auftrag + "' where userid = '" + user + "'";
+            log("SQL:" + comm.CommandText);
             try
             {
                 comm.ExecuteNonQuery();
@@ -431,6 +432,7 @@ namespace Stempeluhr2
             comm.CommandText = "INSERT INTO stamps (userid,task,art,jahr,monat,tag,stunde,minute,sekunde,dezimal,quelle) "+
                                 "VALUES ('"+ user + "','" + auftrag +"','ab','" + jahr_global +"','" + monat_global +"','" + 
                                 tag_global +"','" + stunde_global +"','" + minute_global + "','" + sekunde_global +"','" + zeiteinheit_global + "','stempeluhr')";
+            log("SQL:" + comm.CommandText);
             try
             {
                 comm.ExecuteNonQuery();
@@ -441,6 +443,7 @@ namespace Stempeluhr2
             }
 
             comm.CommandText = "UPDATE user SET currenttask='' where userid = '" + user + "'";
+            log("SQL:" + comm.CommandText);
             try
             {
                 comm.ExecuteNonQuery();
@@ -466,6 +469,7 @@ namespace Stempeluhr2
             {
                 open_db();
                 comm.CommandText = "SELECT * FROM user where userid='" + activeuser_global + "'";
+                log("SQL:" + comm.CommandText);
                 MySql.Data.MySqlClient.MySqlDataReader Reader = comm.ExecuteReader();
 
                 //Detailanzeige fuellen
@@ -486,6 +490,7 @@ namespace Stempeluhr2
                 comm.CommandText = "SELECT * FROM stamps where userid='" + activeuser_global +
                                     "' and jahr ='" + jahr_global + "' and monat = '" + monat_global + "' and tag = '" + tag_global +
                                     "' and art in ('ab','an')";
+                log("SQL:" + comm.CommandText);
                 Reader = comm.ExecuteReader();
 
                 while (Reader.Read())
@@ -507,8 +512,7 @@ namespace Stempeluhr2
                     }
                     if (dbstorniert)
                     {
-                        //TODO drittes Icon für stornierte Stempelungen einfügen
-                        //listViewItem.ImageIndex = 2;
+                        listViewItem.ImageIndex = 2;
                     }
                     Stempelliste.Items.Add(listViewItem);
                 }
@@ -537,6 +541,7 @@ namespace Stempeluhr2
             //prüfen ob person angelegt ist
             open_db();
             comm.CommandText = "SELECT count(*) FROM user where userid='" + usercode + "'";
+            log("SQL:" + comm.CommandText);
             try
             {
                 count = int.Parse(comm.ExecuteScalar() + "");
@@ -553,18 +558,24 @@ namespace Stempeluhr2
 
                 //Die wichtigsten Infos zum User aus der Datenbank holen
                 open_db();
-                comm.CommandText = "SELECT name, vorname, currenttask, stempelfehler, FROM user where userid='" + usercode + "'";
-                Reader = comm.ExecuteReader();
-                Reader.Read();
-                username = Reader["vorname"] + " " +  Reader["name"] + "";
-                currenttask = Reader["currenttask"] + "";
-                stempelfehler = Reader["stempelfehler"] + "";
-                Reader.Close();
+                comm.CommandText = "SELECT name, vorname, currenttask, stempelfehler FROM user where userid='" + usercode + "'";
+                log("SQL:" + comm.CommandText);
+                try
+                {
+                    Reader = comm.ExecuteReader();
+                    Reader.Read();
+                    username = Reader["vorname"] + " " +  Reader["name"] + "";
+                    currenttask = Reader["currenttask"] + "";
+                    stempelfehler = Reader["stempelfehler"] + "";
+                    Reader.Close();
+                }
+                catch (Exception ex) { log(ex.Message); }
 
                 activeuser_global = usercode;
                 activetask_global = currenttask;
 
                 comm.CommandText = "SELECT count(*) FROM stamps WHERE userid='" + usercode + "' AND quelle='wartung' AND storniert = false";
+                log("SQL:" + comm.CommandText);
                 try
                 {
                     autostempelungen = int.Parse(comm.ExecuteScalar() + "");
@@ -613,6 +624,7 @@ namespace Stempeluhr2
             string sumstring = "";
             comm.CommandText = "SELECT ((sum(stunde) * 100)  + sum(dezimal)) FROM stamps WHERE userid = '"
                             + activeuser_global + "' and task = '" + activetask_global + "' and art='ab' AND storniert = false";
+            log("SQL:" + comm.CommandText);
             try
             {
                 sumstring = comm.ExecuteScalar() + "";
@@ -631,6 +643,7 @@ namespace Stempeluhr2
 
             comm.CommandText = "SELECT ((sum(stunde) * 100)  + sum(dezimal)) FROM stamps WHERE userid = '"
                             + activeuser_global + "' and task = '" + activetask_global + "' and art='an' AND storniert = false";
+            log("SQL:" + comm.CommandText);
             try
             {
                 sumstring = comm.ExecuteScalar() + "";
@@ -654,26 +667,30 @@ namespace Stempeluhr2
             MySql.Data.MySqlClient.MySqlDataReader Reader;
             int stempelungenheute = 0;
             bool fehlerflag = false;
+            open_db();
             comm.CommandText = "SELECT count(*) FROM stamps where userid='" + usercode + "' AND tag='" + tag_global + "' AND monat='" + monat_global + "' AND jahr = '" + jahr_global + "'";
+            log("SQL:" + comm.CommandText);
             try
             {
                 stempelungenheute = int.Parse(comm.ExecuteScalar() + "");
             }
             catch (Exception ex) { log(ex.Message); }
-
+            close_db();
             if (stempelungenheute == 0)
             {   //es gab noch keine stempelungen für diese person heute -> prüfen ob der stand sauber ist
                 log("Noch keine Stempelungen heute auf " + usercode + ". Prüfe ob Wartung nötig...");
 
                 //prüfen ob der zeitkonto_berechnungsstand weiter zurückliegt als gestern(abend)
                 string berechnungsstand_string = "";
+                open_db();
                 comm.CommandText = "SELECT zeitkonto_berechnungsstand FROM user where userid='" + usercode + "'";
+                log("SQL:" + comm.CommandText);
                 try
                 {
                     berechnungsstand_string = comm.ExecuteScalar() + "";
                 }
-                catch (Exception ex) { log(ex.Message); }
-
+                catch (Exception ex) { log("SQL: " + comm.CommandText + " Error: " + ex.Message); }
+                close_db();
                 DateTime datum_gestern = DateTime.Now.AddDays(-1);
                 DateTime datum_letzte_zeitberechnung = DateTime.ParseExact(berechnungsstand_string, "yyyyMMdd", null);
 
@@ -682,7 +699,9 @@ namespace Stempeluhr2
                     log("Letzte Zeitberechnung war am " + datum_letzte_zeitberechnung.ToLongDateString() + ". -> Bringe auf Stand von gestern.");
 
                     //den letzen gestempelten tag sauber schliessen
+                    open_db();
                     comm.CommandText = "select * from stamps where userid = '" + usercode + "' AND storniert = false order by jahr DESC, monat desc, tag DESC, stunde desc, minute desc, sekunde desc, art desc limit 1";
+                    log("SQL:" + comm.CommandText);
                     Reader = comm.ExecuteReader();
                     Reader.Read();
                     string letztestempelung_art = Reader["art"] + "";
@@ -695,23 +714,25 @@ namespace Stempeluhr2
                     string letztestempelung_sekunde = Reader["sekunde"] + "";
                     string letztestempelung_zeiteinheit = Reader["dezimal"] + "";
                     Reader.Close();
+                    close_db();
 
                     if (letztestempelung_art != "ab")
                     {   //letzte stempelung ist keine abstempelung -> nötige daten ermitteln und abstempeln
                         log("Letzter Auftrag (" + letztestempelung_auftrag + ") am " + letztestempelung_tag + "." + letztestempelung_monat + "." + letztestempelung_jahr + " wurde nicht abgestempelt...");
 
-
+                        open_db();
                         comm.CommandText = "INSERT INTO stamps (userid,task,art,jahr,monat,tag,stunde,minute,sekunde,dezimal,quelle,storniert) " +
                                            "VALUES ('" + usercode + "','" + letztestempelung_auftrag + "','ab','" + letztestempelung_jahr + "','" +
                                            letztestempelung_monat + "','" + letztestempelung_tag + "','" + letztestempelung_stunde + "','" +
-                                           letztestempelung_minute + "','" + letztestempelung_sekunde + "','" + letztestempelung_zeiteinheit + "','WARTUNG',false)";
+                                           letztestempelung_minute + "','" + letztestempelung_sekunde + "','" + letztestempelung_zeiteinheit + "','wartung',false)";
+                        log("SQL:" + comm.CommandText);
                         try
                         {
                             comm.ExecuteNonQuery();
                             log("Automatische Abstempelung wird eingetragen. SQL:" + comm.CommandText);
                         }
                         catch (MySql.Data.MySqlClient.MySqlException ex) { log(ex.Message); }
-
+                        close_db();
                     }
 
                     //tag für tag istzeit berechnen, mit sollzeit abgleichen, auf zeitkonto anrechnen bis zeitkontostand bei gestern abend ist oder ein fehler auftritt
@@ -732,37 +753,46 @@ namespace Stempeluhr2
                         {
                             fehlerflag = true;
                             log("Fehler bei der Zeitberechnung -> Stundenkonto wird nicht aktualisiert");
+                            open_db();
                             comm.CommandText = "UPDATE user SET stempelfehler='true' where userid = '" + usercode + "'";
+                            log("SQL:" + comm.CommandText);
                             try
                             {
                                 comm.ExecuteNonQuery();
                                 log("Fehler beim Mitarbeiter vermerkt. SQL:" + comm.CommandText);
                             }
                             catch (MySql.Data.MySqlClient.MySqlException ex) { log(ex.Message); }
+                            close_db();
                         }
                         else
                         {//berechnung von Ist- und Soll-Zeit erfolgreich -> neuen Zeitkontostand berechnen
 
                             //bisherigen zeitkontostand abfragen
+                            open_db();
                             comm.CommandText = "SELECT zeitkonto FROM user where userid='" + usercode + "'";
+                            log("SQL:" + comm.CommandText);
                             try
                             {
                                 zeitkontostand_bisher = double.Parse(comm.ExecuteScalar() + "");
                             }
                             catch (Exception ex) { log(ex.Message); }
+                            close_db();
 
                             zeitkontostand_neu = zeitkontostand_bisher + berechneteUeberstunden;
 
                             //neuen zeitkontostand beim Mitarbeiter eintragen und berechnungsstand auf das berechnungsdatum setzen
+                            open_db();
                             comm.CommandText = "UPDATE user SET zeitkonto='" + zeitkontostand_neu +
                                                 "',zeitkonto_berechnungsstand = '" + berechnungsjahr + berechnungsmonat + berechnungstag +
                                                 "' where userid = '" + usercode + "'";
+                            log("SQL:" + comm.CommandText);
                             try
                             {
                                 comm.ExecuteNonQuery();
                                 log("Zeitkonto aktualisiert. SQL:" + comm.CommandText);
                             }
                             catch (MySql.Data.MySqlClient.MySqlException ex){ log(ex.Message); }
+                            close_db();
     
                             datum_letzte_zeitberechnung = berechnungsdatum;
                             log("Zeitberechnung ist jetzt auf dem Stand vom " + datum_letzte_zeitberechnung.ToLongDateString());
@@ -781,6 +811,7 @@ namespace Stempeluhr2
             comm.CommandText = "SELECT * FROM stamps WHERE userid = '" + usercode + "' AND jahr = '" + berechnungsjahr + 
                                 "' AND monat = '" + berechnungsmonat + "' AND tag = '" + berechnungstag + "'  AND storniert = false " +
                                 " ORDER BY jahr ASC, monat ASC, tag ASC, stunde ASC, minute ASC, sekunde ASC, art ASC";
+            log("SQL:" + comm.CommandText);
             MySql.Data.MySqlClient.MySqlDataReader Reader = comm.ExecuteReader();
 
             while (Reader.Read())
@@ -838,6 +869,8 @@ namespace Stempeluhr2
                     }
                 }
             }
+            Reader.Close();
+            close_db();
             Istzeit_tmp = Istzeit_tmp - Pausenzeit_tmp;
                 
             //Pausenzeit auf mindestlänge bringen
@@ -867,6 +900,7 @@ namespace Stempeluhr2
             open_db();
             comm.CommandText = "SELECT sollzeit FROM kalender where zuordnung='" + usercode + "' AND jahr = '" + berechnungsjahr + 
                                 "' AND monat = '" + berechnungsmonat+ "' AND tag = '" + berechnungstag + "' AND storniert = false";
+            log("SQL:" + comm.CommandText);
             try
             {
                 tmp = comm.ExecuteScalar();
@@ -883,6 +917,7 @@ namespace Stempeluhr2
                 open_db();
                 comm.CommandText = "SELECT sollzeit FROM kalender where zuordnung='allgemein' AND jahr = '" + berechnungsjahr + 
                                 "' AND monat = '" + berechnungsmonat+ "' AND tag = '" + berechnungstag + "' AND storniert = false";
+                log("SQL:" + comm.CommandText);
                 try
                 {
                     tmp = comm.ExecuteScalar();

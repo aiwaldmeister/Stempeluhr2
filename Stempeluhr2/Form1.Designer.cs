@@ -34,6 +34,7 @@
             System.Windows.Forms.ListViewItem listViewItem2 = new System.Windows.Forms.ListViewItem("123456 00:00", 1);
             System.Windows.Forms.ListViewItem listViewItem3 = new System.Windows.Forms.ListViewItem("123456 00:00", 0);
             System.Windows.Forms.ListViewItem listViewItem4 = new System.Windows.Forms.ListViewItem("123456 00:00", 1);
+            System.Windows.Forms.ListViewItem listViewItem5 = new System.Windows.Forms.ListViewItem("123456 00:00", 2);
             this.Zeitanzeige = new System.Windows.Forms.Label();
             this.MessageLabel = new System.Windows.Forms.Label();
             this.countdowntimer = new System.Windows.Forms.Timer(this.components);
@@ -105,7 +106,7 @@
             // Anzeige
             // 
             this.Anzeige.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.Anzeige.Font = new System.Drawing.Font("Courier New", 27.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Anzeige.Font = new System.Drawing.Font("Courier New", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Anzeige.Location = new System.Drawing.Point(0, 0);
             this.Anzeige.Name = "Anzeige";
             this.Anzeige.Size = new System.Drawing.Size(653, 402);
@@ -130,6 +131,7 @@
             this.Stempelicons.TransparentColor = System.Drawing.Color.Transparent;
             this.Stempelicons.Images.SetKeyName(0, "einstempeln.gif");
             this.Stempelicons.Images.SetKeyName(1, "ausstempeln.gif");
+            this.Stempelicons.Images.SetKeyName(2, "storniert.gif");
             // 
             // Stempelliste
             // 
@@ -140,7 +142,8 @@
             listViewItem1,
             listViewItem2,
             listViewItem3,
-            listViewItem4});
+            listViewItem4,
+            listViewItem5});
             this.Stempelliste.Location = new System.Drawing.Point(288, 140);
             this.Stempelliste.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
             this.Stempelliste.Name = "Stempelliste";
@@ -176,8 +179,12 @@
             this.Controls.Add(this.MessageLabel);
             this.Controls.Add(this.Codefeld);
             this.Controls.Add(this.Anzeige);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
             this.Name = "Form1";
             this.Text = "Form1";
+            this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.Load += new System.EventHandler(this.Form1_Load);
             this.ResumeLayout(false);
