@@ -175,11 +175,19 @@ namespace Stempeluhr2
             if(soundart == "error")
             {
                 Sound.SoundLocation = "error.wav";
-                Sound.Play();
+                try
+                {
+                    Sound.Play();
+                }catch (Exception){ log("soundfile error.wav nicht gefunden"); }
+                
             }else if(soundart == "erfolg")
             {
                 Sound.SoundLocation = "erfolg.wav";
-                Sound.Play();
+                try
+                {
+                    Sound.Play();
+                }
+                catch (Exception) { log("soundfile erfolg.wav nicht gefunden"); }
             }else
             {
                 //Sound.SoundLocation = "default.wav";
@@ -216,6 +224,10 @@ namespace Stempeluhr2
                 }else
                 {
                     Anzeige.Text = "Nicht eingestempelt";
+                }
+                if (userwarnung_global != "")
+                {
+                    Anzeige.Text = Anzeige.Text + "\r\n\r\n" + userwarnung_global;
                 }
                 status_global = "eingeloggt";
                 message(statusmeldung, Color.LightSkyBlue);
@@ -509,20 +521,26 @@ namespace Stempeluhr2
         }
         private bool einloggen(string usercode)
         {
-
+            userwarnung_global = "";
             MySql.Data.MySqlClient.MySqlDataReader Reader;
             int count = -1;
 
             string username = "";
             string currenttask = "";
+            string stempelfehler = "";
+            int autostempelungen = 0;
 
             //prüfen ob person angelegt ist
             open_db();
             comm.CommandText = "SELECT count(*) FROM user where userid='" + usercode + "'";
             try
             {
-                count = int.Parse(comm.ExecuteScalar()+"");
-            }catch(Exception ex){log(ex.Message);}
+                count = int.Parse(comm.ExecuteScalar() + "");
+            }
+            catch (Exception ex)
+            {
+                log(ex.Message);
+            }
             close_db();
 
             if(count == 1)
@@ -531,17 +549,38 @@ namespace Stempeluhr2
 
                 //Die wichtigsten Infos zum User aus der Datenbank holen
                 open_db();
-                comm.CommandText = "SELECT name, vorname, currenttask FROM user where userid='" + usercode + "'";
+                comm.CommandText = "SELECT name, vorname, currenttask, stempelfehler, FROM user where userid='" + usercode + "'";
                 Reader = comm.ExecuteReader();
                 Reader.Read();
                 username = Reader["vorname"] + " " +  Reader["name"] + "";
                 currenttask = Reader["currenttask"] + "";
+                stempelfehler = Reader["stempelfehler"] + "";
                 Reader.Close();
 
                 activeuser_global = usercode;
                 activetask_global = currenttask;
 
-                if(currenttask!= "")
+                comm.CommandText = "SELECT count(*) FROM stamps WHERE userid='" + usercode + "' AND quelle='wartung'";
+                try
+                {
+                    autostempelungen = int.Parse(comm.ExecuteScalar() + "");
+                }
+                catch (Exception ex) { log(ex.Message); }
+
+                if(autostempelungen > 0)
+                {
+                    userwarnung_global = "Unkorrigierte automatische Abstempelungen vorhanden!";
+                }
+                
+                if(stempelfehler == "true")
+                {
+                    if(userwarnung_global != "") userwarnung_global = userwarnung_global + "\r\n";
+                    userwarnung_global = userwarnung_global + "Fehlerhafte Stempelungen -> Zeitberechnung nicht möglich!";
+                }
+                if (userwarnung_global != "") userwarnung_global = userwarnung_global + "\r\n Bitte im Büro korrigieren lassen";
+
+
+                if (currenttask!= "")
                 {//Zeit ermitteln, die die Person schon auf dem Auftrag gearbeitet hat
                     berechne_activetask_zeitbisher_global();
                 }
@@ -551,9 +590,13 @@ namespace Stempeluhr2
                 close_db();
                 return true;
 
-            }else
+            }else if (count == 0)
             {   //User nicht gefunden
                 setstatus("error", "Person nicht gefunden");
+                return false;
+            }else
+            {//Datenbankergebnis weder 1 noch 0 -> vermutlich besteht garkeine Datenbankverbindung
+                setstatus("error", "Datenbankverbindung prüfen");
                 return false;
             }
 
@@ -665,7 +708,6 @@ namespace Stempeluhr2
                         }
                         catch (MySql.Data.MySqlClient.MySqlException ex) { log(ex.Message); }
 
-                        //TODO auf dem Einlogg-Screen auf die Automatische-Stempelung hinweisen
                     }
 
                     //tag für tag istzeit berechnen, mit sollzeit abgleichen, auf zeitkonto anrechnen bis zeitkontostand bei gestern abend ist oder ein fehler auftritt
@@ -686,8 +728,15 @@ namespace Stempeluhr2
                         {
                             fehlerflag = true;
                             log("Fehler bei der Zeitberechnung -> Stundenkonto wird nicht aktualisiert");
-                            //TODO auf dem Einlogg-Screen auf einen Fehler hinweisen
-                        }else
+                            comm.CommandText = "UPDATE user SET stempelfehler='true' where userid = '" + usercode + "'";
+                            try
+                            {
+                                comm.ExecuteNonQuery();
+                                log("Fehler beim Mitarbeiter vermerkt. SQL:" + comm.CommandText);
+                            }
+                            catch (MySql.Data.MySqlClient.MySqlException ex) { log(ex.Message); }
+                        }
+                        else
                         {//berechnung von Ist- und Soll-Zeit erfolgreich -> neuen Zeitkontostand berechnen
 
                             //bisherigen zeitkontostand abfragen
