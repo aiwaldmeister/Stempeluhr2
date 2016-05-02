@@ -45,6 +45,8 @@ namespace Stempeluhr2
         MySql.Data.MySqlClient.MySqlCommand comm = new MySql.Data.MySqlClient.MySqlCommand();
         System.Media.SoundPlayer Sound = new System.Media.SoundPlayer();
 
+        //TODO passende soundfiles besorgen und zur exe legen
+
         string logfilename_global;
 
         public Form1()
@@ -496,6 +498,7 @@ namespace Stempeluhr2
                     string dbstunde = Reader["stunde"] + "";
                     string dbminute = Reader["minute"] + "";
                     string dbart = Reader["art"] + "";
+                    bool dbstorniert = bool.Parse(Reader["storniert"] + "");
 
                     string[] row = {dbtask + " " + dbstunde + ":" + dbminute};
                     var listViewItem = new ListViewItem(row);
@@ -505,6 +508,11 @@ namespace Stempeluhr2
                     }else if(dbart == "ab")
                     {
                         listViewItem.ImageIndex = 1;
+                    }
+                    if (dbstorniert)
+                    {
+                        //TODO drittes Icon für stornierte Stempelungen einfügen
+                        //listViewItem.ImageIndex = 2;
                     }
                     Stempelliste.Items.Add(listViewItem);
                 }
@@ -560,7 +568,7 @@ namespace Stempeluhr2
                 activeuser_global = usercode;
                 activetask_global = currenttask;
 
-                comm.CommandText = "SELECT count(*) FROM stamps WHERE userid='" + usercode + "' AND quelle='wartung'";
+                comm.CommandText = "SELECT count(*) FROM stamps WHERE userid='" + usercode + "' AND quelle='wartung' AND storniert = false";
                 try
                 {
                     autostempelungen = int.Parse(comm.ExecuteScalar() + "");
@@ -608,7 +616,7 @@ namespace Stempeluhr2
             int summe_anstempelungen = 0;
             string sumstring = "";
             comm.CommandText = "SELECT ((sum(stunde) * 100)  + sum(dezimal)) FROM stamps WHERE userid = '"
-                            + activeuser_global + "' and task = '" + activetask_global + "' and art='ab'";
+                            + activeuser_global + "' and task = '" + activetask_global + "' and art='ab' AND storniert = false";
             try
             {
                 sumstring = comm.ExecuteScalar() + "";
@@ -626,7 +634,7 @@ namespace Stempeluhr2
             }
 
             comm.CommandText = "SELECT ((sum(stunde) * 100)  + sum(dezimal)) FROM stamps WHERE userid = '"
-                            + activeuser_global + "' and task = '" + activetask_global + "' and art='an'";
+                            + activeuser_global + "' and task = '" + activetask_global + "' and art='an' AND storniert = false";
             try
             {
                 sumstring = comm.ExecuteScalar() + "";
@@ -678,7 +686,7 @@ namespace Stempeluhr2
                     log("Letzte Zeitberechnung war am " + datum_letzte_zeitberechnung.ToLongDateString() + ". -> Bringe auf Stand von gestern.");
 
                     //den letzen gestempelten tag sauber schliessen
-                    comm.CommandText = "select * from stamps where userid = '" + usercode + "' order by jahr DESC, monat desc, tag DESC, stunde desc, minute desc, sekunde desc, art desc limit 1";
+                    comm.CommandText = "select * from stamps where userid = '" + usercode + "' AND storniert = false order by jahr DESC, monat desc, tag DESC, stunde desc, minute desc, sekunde desc, art desc limit 1";
                     Reader = comm.ExecuteReader();
                     Reader.Read();
                     string letztestempelung_art = Reader["art"] + "";
@@ -697,10 +705,10 @@ namespace Stempeluhr2
                         log("Letzter Auftrag (" + letztestempelung_auftrag + ") am " + letztestempelung_tag + "." + letztestempelung_monat + "." + letztestempelung_jahr + " wurde nicht abgestempelt...");
 
 
-                        comm.CommandText = "INSERT INTO stamps (userid,task,art,jahr,monat,tag,stunde,minute,sekunde,dezimal,quelle) " +
+                        comm.CommandText = "INSERT INTO stamps (userid,task,art,jahr,monat,tag,stunde,minute,sekunde,dezimal,quelle,storniert) " +
                                            "VALUES ('" + usercode + "','" + letztestempelung_auftrag + "','ab','" + letztestempelung_jahr + "','" +
                                            letztestempelung_monat + "','" + letztestempelung_tag + "','" + letztestempelung_stunde + "','" +
-                                           letztestempelung_minute + "','" + letztestempelung_sekunde + "','" + letztestempelung_zeiteinheit + "','wartung')";
+                                           letztestempelung_minute + "','" + letztestempelung_sekunde + "','" + letztestempelung_zeiteinheit + "','WARTUNG',false)";
                         try
                         {
                             comm.ExecuteNonQuery();
@@ -775,7 +783,7 @@ namespace Stempeluhr2
 
             open_db();
             comm.CommandText = "SELECT * FROM stamps WHERE userid = '" + usercode + "' AND jahr = '" + berechnungsjahr + 
-                                "' AND monat = '" + berechnungsmonat + "' AND tag = '" + berechnungstag + "' AND quelle != 'storniert' " +
+                                "' AND monat = '" + berechnungsmonat + "' AND tag = '" + berechnungstag + "'  AND storniert = false " +
                                 " ORDER BY jahr ASC, monat ASC, tag ASC, stunde ASC, minute ASC, sekunde ASC, art ASC";
             MySql.Data.MySqlClient.MySqlDataReader Reader = comm.ExecuteReader();
 
@@ -862,7 +870,7 @@ namespace Stempeluhr2
             string sollzeitquelle = "";
             open_db();
             comm.CommandText = "SELECT sollzeit FROM kalender where zuordnung='" + usercode + "' AND jahr = '" + berechnungsjahr + 
-                                "' AND monat = '" + berechnungsmonat+ "' AND tag = '" + berechnungstag + "'";
+                                "' AND monat = '" + berechnungsmonat+ "' AND tag = '" + berechnungstag + "' AND storniert = false";
             try
             {
                 tmp = comm.ExecuteScalar();
@@ -878,7 +886,7 @@ namespace Stempeluhr2
             {   //es gab keinen persönlichen Kalendereintrag -> suche allgemeinen
                 open_db();
                 comm.CommandText = "SELECT sollzeit FROM kalender where zuordnung='allgemein' AND jahr = '" + berechnungsjahr + 
-                                "' AND monat = '" + berechnungsmonat+ "' AND tag = '" + berechnungstag + "'";
+                                "' AND monat = '" + berechnungsmonat+ "' AND tag = '" + berechnungstag + "' AND storniert = false";
                 try
                 {
                     tmp = comm.ExecuteScalar();
