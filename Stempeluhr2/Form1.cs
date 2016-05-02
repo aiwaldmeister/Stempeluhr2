@@ -38,15 +38,55 @@ namespace Stempeluhr2
         string activeuser_global = "";
         string activetask_global = "";
         string activetask_zeitbisher_global = "";
+        string userwarnung_global = "";
 
 
         MySql.Data.MySqlClient.MySqlConnection conn = new MySql.Data.MySqlClient.MySqlConnection();
         MySql.Data.MySqlClient.MySqlCommand comm = new MySql.Data.MySqlClient.MySqlCommand();
+        System.Media.SoundPlayer Sound = new System.Media.SoundPlayer();
+
         string logfilename_global;
 
         public Form1()
         {
             InitializeComponent();
+        }
+        private void Form1_Load(object sender, EventArgs e)
+        {
+
+            //Logfile initialisieren
+            init_logfile();
+
+            //Config-laden
+            init_config();
+
+            //Datenbank initialisieren
+            init_db(dbserverconf_global, dbnameconf_global, dbuserconf_global, dbpwconf_global);
+
+            //Status Ready setzen
+            setstatus("ready", "");
+
+        }
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            log("Programm wird beendet.......................................................................");
+        }
+        private void Codefeld_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            //funktion ausgelagert zum KeyDown Event
+        }
+        private void Codefeld_KeyDown(object sender, KeyEventArgs e)
+        {   //Die Taste wird vor dem eigentlichen Tastendruck abgefangen um das Enter-'Ding'-Geräusch zu unterdrücken.
+            if (e.KeyCode == Keys.Enter)
+            {
+                string code = Codefeld.Text;
+                codeeingabe(code);
+                e.SuppressKeyPress = true;  
+            }
+        }
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+
         }
         private void init_logfile()
         {
@@ -54,14 +94,6 @@ namespace Stempeluhr2
             log("Programm gestartet..........................................................................");
             log("Logfile geladen.");
 
-        }
-        private void log(String text)
-        {
-            using (StreamWriter file = new StreamWriter(logfilename_global, true))
-            {
-                file.WriteLine(DateTime.Now.ToLongTimeString() + ": " + text);
-            }
-            Console.WriteLine("Log: " + DateTime.Now.ToLongTimeString() + ": " + text);
         }
         private void init_config()
         {
@@ -108,9 +140,18 @@ namespace Stempeluhr2
                 return false;
             }
         }
-        private void message(string text)
+        private void log(String text)
+        {
+            using (StreamWriter file = new StreamWriter(logfilename_global, true))
+            {
+                file.WriteLine(DateTime.Now.ToLongTimeString() + ": " + text);
+            }
+            Console.WriteLine("Log: " + DateTime.Now.ToLongTimeString() + ": " + text);
+        }
+        private void message(string text, Color farbe)
         {
             MessageLabel.Text = text;
+            MessageLabel.BackColor = farbe;
         }
         private void setCountdown(int sekunden)
         {
@@ -129,33 +170,31 @@ namespace Stempeluhr2
             countdowntimer.Enabled = false;
             countdownbar.Visible = false;
         }
-        private void Form1_Load(object sender, EventArgs e)
+        private void playsound(string soundart)
         {
-
-            //Logfile initialisieren
-            init_logfile();
-
-            //Config-laden
-            init_config();
-
-            //Datenbank initialisieren
-            init_db(dbserverconf_global, dbnameconf_global, dbuserconf_global, dbpwconf_global);
-
-            //Status Ready setzen
-            setstatus("ready", "");
+            if(soundart == "error")
+            {
+                Sound.SoundLocation = "error.wav";
+                Sound.Play();
+            }else if(soundart == "erfolg")
+            {
+                Sound.SoundLocation = "erfolg.wav";
+                Sound.Play();
+            }else
+            {
+                //Sound.SoundLocation = "default.wav";
+                //Sound.Play;
+            }
 
         }
         private void setstatus(string zielstatus, string statusmeldung)
         {
-            //TODO Farbwerte und oder sounds einbauen.
-
-
+            
             if (zielstatus == "ready")
             {
                 stopCountdown();
                 Codefeld.Text = "";
-                MessageLabel.BackColor = Color.LightGreen;
-                message("Bitte Personencode scannen");
+                message("Bitte Personencode scannen",Color.LightGreen);
                 Anzeige.Text = "";
                 Stempelliste.Visible = false;
                 Detailanzeige.Visible = false;
@@ -171,7 +210,6 @@ namespace Stempeluhr2
             {
                 Codefeld.Text = "";
                 Codefeld.Enabled = true;
-                MessageLabel.BackColor = Color.LightSkyBlue;
                 if (activetask_global != "")
                 {
                     Anzeige.Text = "Eingestempelt auf " + activetask_global + ". Bisher " + activetask_zeitbisher_global + " Zeiteinheiten";
@@ -180,7 +218,7 @@ namespace Stempeluhr2
                     Anzeige.Text = "Nicht eingestempelt";
                 }
                 status_global = "eingeloggt";
-                message(statusmeldung);
+                message(statusmeldung, Color.LightSkyBlue);
                 log("Status auf 'eingeloggt' gesetzt. (" + statusmeldung + ")");
                 setCountdown(10);
 
@@ -188,52 +226,46 @@ namespace Stempeluhr2
             else if (zielstatus == "gestempelt")
             {
                 Codefeld.Text = "";
-                MessageLabel.BackColor = Color.LightGreen;
-                message(statusmeldung);
+                message(statusmeldung, Color.LightGreen);
                 Anzeige.Text = "";
                 status_global = "gestempelt";
                 Stempelliste.Visible = false;
                 Detailanzeige.Visible = false;
-                SystemSounds.Hand.Play();
                 activeuser_global = "";
                 activetask_global = "";
                 setCountdown(3);
                 Codefeld.Enabled = true;
                 Codefeld.Focus();
+                playsound("erfolg");
                 log("Status auf 'gestempelt' gesetzt. (" + statusmeldung + ")");
 
             }
             else if (zielstatus == "error")
             {
                 Codefeld.Enabled = false;
-                MessageLabel.BackColor = Color.IndianRed;
-                message(statusmeldung);
+                message(statusmeldung, Color.IndianRed);
                 Anzeige.Text = "";
                 status_global = "error";
                 activeuser_global = "";
                 activetask_global = "";
                 log("Status auf 'error' gesetzt. (" + statusmeldung + ")");
                 setCountdown(2);
+                playsound("erfolg");
 
             }
             else if (zielstatus == "userinfos")
             {
-                message(statusmeldung);
+                message(statusmeldung, Color.LightSkyBlue);
                 Stempelliste.Visible = true;
                 Detailanzeige.Visible = true;
                 status_global = "userinfos";
                 Anzeige.Text = "";
                 Codefeld.Text = "";
-                MessageLabel.BackColor = Color.LightSkyBlue;
                 Codefeld.Focus();
                 log("Status auf 'userinfos' gesetzt. (" + statusmeldung + ")");
                 setCountdown(10);
             }
 
-        }
-        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            log("Programm wird beendet.......................................................................");
         }
         private void uhrtimer_Tick(object sender, EventArgs e)
         {
@@ -268,10 +300,6 @@ namespace Stempeluhr2
                 stopCountdown();
                 setstatus("ready", "");
             }
-        }
-        private void Codefeld_KeyPress(object sender, KeyPressEventArgs e)
-        {
-            //funktion ausgelagert zum KeyDown Event
         }
         private void codeeingabe(string code)
         {
@@ -578,6 +606,7 @@ namespace Stempeluhr2
         {
             MySql.Data.MySqlClient.MySqlDataReader Reader;
             int stempelungenheute = 0;
+            bool fehlerflag = false;
             comm.CommandText = "SELECT count(*) FROM stamps where userid='" + usercode + "' AND tag='" + tag_global + "' AND monat='" + monat_global + "' AND jahr = '" + jahr_global + "'";
             try
             {
@@ -636,11 +665,11 @@ namespace Stempeluhr2
                         }
                         catch (MySql.Data.MySqlClient.MySqlException ex) { log(ex.Message); }
 
-                        //TODO Irgendwo auf die Automatische-Stempelung hinweisen
+                        //TODO auf dem Einlogg-Screen auf die Automatische-Stempelung hinweisen
                     }
 
-                    //tag für tag istzeit berechnen, mit sollzeit abgleichen, auf zeitkonto anrechnen bis zeitkontostand bei gestern abend ist
-                    while (DateTime.Compare(datum_letzte_zeitberechnung, datum_gestern) < 0)
+                    //tag für tag istzeit berechnen, mit sollzeit abgleichen, auf zeitkonto anrechnen bis zeitkontostand bei gestern abend ist oder ein fehler auftritt
+                    while (DateTime.Compare(datum_letzte_zeitberechnung, datum_gestern) < 0  && fehlerflag == false)
                     {
                         DateTime berechnungsdatum = datum_letzte_zeitberechnung.AddDays(1).Date;
                         string berechnungsjahr = berechnungsdatum.Year.ToString("D4");
@@ -653,39 +682,40 @@ namespace Stempeluhr2
                         double zeitkontostand_bisher = 0;
                         double zeitkontostand_neu = 0;
 
-                        //bisherigen zeitkontostand abfragen
-                        comm.CommandText = "SELECT zeitkonto FROM user where userid='" + usercode + "'";
-                        try
+                        if(berechneteIstZeit == -1 || berechneteSollZeit == -1) //Fehler bei der Berechnung
                         {
-                            zeitkontostand_bisher = double.Parse(comm.ExecuteScalar() + "");
+                            fehlerflag = true;
+                            log("Fehler bei der Zeitberechnung -> Stundenkonto wird nicht aktualisiert");
+                            //TODO auf dem Einlogg-Screen auf einen Fehler hinweisen
+                        }else
+                        {//berechnung von Ist- und Soll-Zeit erfolgreich -> neuen Zeitkontostand berechnen
+
+                            //bisherigen zeitkontostand abfragen
+                            comm.CommandText = "SELECT zeitkonto FROM user where userid='" + usercode + "'";
+                            try
+                            {
+                                zeitkontostand_bisher = double.Parse(comm.ExecuteScalar() + "");
+                            }
+                            catch (Exception ex) { log(ex.Message); }
+
+                            zeitkontostand_neu = zeitkontostand_bisher + berechneteUeberstunden;
+
+                            //neuen zeitkontostand beim Mitarbeiter eintragen und berechnungsstand auf das berechnungsdatum setzen
+                            comm.CommandText = "UPDATE user SET zeitkonto='" + zeitkontostand_neu +
+                                                "',zeitkonto_berechnungsstand = '" + berechnungsjahr + berechnungsmonat + berechnungstag +
+                                                "' where userid = '" + usercode + "'";
+                            try
+                            {
+                                comm.ExecuteNonQuery();
+                                log("Zeitkonto aktualisiert. SQL:" + comm.CommandText);
+                            }
+                            catch (MySql.Data.MySqlClient.MySqlException ex){ log(ex.Message); }
+    
+                            datum_letzte_zeitberechnung = berechnungsdatum;
+                            log("Zeitberechnung ist jetzt auf dem Stand vom " + datum_letzte_zeitberechnung.ToLongDateString());
                         }
-                        catch (Exception ex) { log(ex.Message); }
-
-                        zeitkontostand_neu = zeitkontostand_bisher + berechneteUeberstunden;
-
-
-                        //neuen zeitkontostand beim Mitarbeiter eintragen und berechnungsstand auf das berechnungsdatum setzen
-                        comm.CommandText = "UPDATE user SET zeitkonto='" + zeitkontostand_neu +
-                                            "',zeitkonto_berechnungsstand = '" + berechnungsjahr + berechnungsmonat + berechnungstag +
-                                            "' where userid = '" + usercode + "'";
-                        try
-                        {
-                            comm.ExecuteNonQuery();
-                            log("Zeitkonto aktualisiert. SQL:" + comm.CommandText);
-                        }
-                        catch (MySql.Data.MySqlClient.MySqlException ex)
-                        {
-                            log(ex.Message);
-                        }
-                        datum_letzte_zeitberechnung = berechnungsdatum;
-                        log("Zeitberechnung ist jetzt auf dem Stand vom " + datum_letzte_zeitberechnung.ToLongDateString());
-
                     }
-
                 }
-
-                //////// wartungen abgeschlossen
-
             }
         }
         private double ermittleIstZeit(string usercode, string berechnungsjahr, string berechnungsmonat, string berechnungstag)
@@ -754,21 +784,27 @@ namespace Stempeluhr2
                         }
                     }
                 }
-
             }
-
             Istzeit_tmp = Istzeit_tmp - Pausenzeit_tmp;
-            
-
                 
-            //TODO schauen ob die Pausenzeit zu wenig für die Arbeitszeit ist
-
-
-            //TODO Fehlerflag prüfen und im Fehlerfall irgendwo einen hinweis hinterlassen
-
-
-
-            return Istzeit_tmp;
+            //Pausenzeit auf mindestlänge bringen
+            if(Istzeit_tmp >= 6 && Pausenzeit_tmp < 0.75)
+            {
+                Istzeit_tmp = Istzeit_tmp - (0.75 - Pausenzeit_tmp);
+            }else if(Pausenzeit_tmp < 0.5)
+            {
+                Istzeit_tmp = Istzeit_tmp - (0.5 - Pausenzeit_tmp);
+            }
+            //TODO Mindestpausenzeit mit Stefan absprechen und ggf. nochmal anpassen.
+            
+            if(Fehler == "")
+            {
+                return Istzeit_tmp;
+            }
+            else
+            {
+                return -1;
+            }
         }
         private double ermittleSollZeit(string usercode, string berechnungsjahr, string berechnungsmonat, string berechnungstag)
         {   //sollzeit ermitteln (persoenlicher kalendereintrag > allgemeiner kalendereintrag > fallback(wochenende 0, sonst 7,2)
@@ -823,20 +859,6 @@ namespace Stempeluhr2
             log("Ermittelte Sollzeit für " + berechnungstag + "." + berechnungsmonat + "." + berechnungsjahr + ": " + sollzeit + " (" + sollzeitquelle + ")" );
             return sollzeit;
 
-        }
-        private void textBox1_TextChanged(object sender, EventArgs e)
-        {
-
-        }
-        private void Codefeld_KeyDown(object sender, KeyEventArgs e)
-        {
-            //Tastendruck auswerten
-            if (e.KeyCode == Keys.Enter)
-            {
-                string code = Codefeld.Text;
-                codeeingabe(code);
-                e.SuppressKeyPress = true;
-            }
         }
     }
 }
