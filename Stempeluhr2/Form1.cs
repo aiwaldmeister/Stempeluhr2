@@ -45,9 +45,7 @@ namespace Stempeluhr2
         MySql.Data.MySqlClient.MySqlCommand comm = new MySql.Data.MySqlClient.MySqlCommand();
         System.Media.SoundPlayer Sound = new System.Media.SoundPlayer();
 
-
-
-
+        
 
         string logfilename_global;
 
@@ -458,7 +456,7 @@ namespace Stempeluhr2
             return true;
         }
         private bool showdetails()
-        {
+        {//TODO Detailwerte ermitteln
             string name = "";
             string zeitkonto = "";
             string verrechenbare_zeit = "";
@@ -692,6 +690,8 @@ namespace Stempeluhr2
                 catch (Exception ex) { log("SQL: " + comm.CommandText + " Error: " + ex.Message); }
                 close_db();
                 DateTime datum_gestern = DateTime.Now.AddDays(-1);
+                //TODO datum_gestern auf 00:00 Uhr bringen, damit der Vergleich mit dem datum der letzten Berechnung funktioniert
+                
                 DateTime datum_letzte_zeitberechnung = DateTime.ParseExact(berechnungsstand_string, "yyyyMMdd", null);
 
                 if (DateTime.Compare(datum_letzte_zeitberechnung, datum_gestern) < 0)
