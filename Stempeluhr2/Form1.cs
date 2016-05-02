@@ -19,30 +19,30 @@ namespace Stempeluhr2
     {
 
 
-        string dbserverconf;
-        string dbnameconf;
-        string dbuserconf;
-        string dbpwconf;
+        string dbserverconf_global;
+        string dbnameconf_global;
+        string dbuserconf_global;
+        string dbpwconf_global;
 
-        string jahr;
-        string monat;
-        string tag;
-        string stunde;
-        string minute;
-        string zeiteinheit;
-        string sekunde;
+        string jahr_global;
+        string monat_global;
+        string tag_global;
+        string stunde_global;
+        string minute_global;
+        string zeiteinheit_global;
+        string sekunde_global;
 
-        string status = "init";
-        int countdown = 0;
+        string status_global = "init";
+        int countdown_global = 0;
 
-        string activeuser = "";
-        string activetask = "";
-        string activetask_zeitbisher = "";
+        string activeuser_global = "";
+        string activetask_global = "";
+        string activetask_zeitbisher_global = "";
 
 
         MySql.Data.MySqlClient.MySqlConnection conn = new MySql.Data.MySqlClient.MySqlConnection();
         MySql.Data.MySqlClient.MySqlCommand comm = new MySql.Data.MySqlClient.MySqlCommand();
-        string logfilename;
+        string logfilename_global;
 
         public Form1()
         {
@@ -50,14 +50,14 @@ namespace Stempeluhr2
         }
         private void init_logfile()
         {
-            logfilename = DateTime.Now.Year.ToString("D4") + DateTime.Now.Month.ToString("D2") + DateTime.Now.Day.ToString("D2") + ".log";
+            logfilename_global = DateTime.Now.Year.ToString("D4") + DateTime.Now.Month.ToString("D2") + DateTime.Now.Day.ToString("D2") + ".log";
             log("Programm gestartet..........................................................................");
             log("Logfile geladen.");
 
         }
         private void log(String text)
         {
-            using (StreamWriter file = new StreamWriter(logfilename, true))
+            using (StreamWriter file = new StreamWriter(logfilename_global, true))
             {
                 file.WriteLine(DateTime.Now.ToLongTimeString() + ": " + text);
             }
@@ -65,12 +65,12 @@ namespace Stempeluhr2
         }
         private void init_config()
         {
-            dbserverconf = System.Configuration.ConfigurationManager.AppSettings["dbserver"];
-            dbnameconf = System.Configuration.ConfigurationManager.AppSettings["dbname"];
-            dbuserconf = System.Configuration.ConfigurationManager.AppSettings["dbuser"];
-            dbpwconf = System.Configuration.ConfigurationManager.AppSettings["dbpw"];
+            dbserverconf_global = System.Configuration.ConfigurationManager.AppSettings["dbserver"];
+            dbnameconf_global = System.Configuration.ConfigurationManager.AppSettings["dbname"];
+            dbuserconf_global = System.Configuration.ConfigurationManager.AppSettings["dbuser"];
+            dbpwconf_global = System.Configuration.ConfigurationManager.AppSettings["dbpw"];
 
-            log("Config-File gelesen, Datenbankinfos gesetzt.('" + dbserverconf + "','" + dbnameconf + "','" + dbuserconf + "','" + dbpwconf + "')");
+            log("Config-File gelesen, Datenbankinfos gesetzt.('" + dbserverconf_global + "','" + dbnameconf_global + "','" + dbuserconf_global + "','" + dbpwconf_global + "')");
         }
         private void init_db(string server, string database, string uid, string password)
         {
@@ -114,10 +114,10 @@ namespace Stempeluhr2
         }
         private void setCountdown(int sekunden)
         {
-            countdown = sekunden * 10;
+            countdown_global = sekunden * 10;
             countdownbar.Minimum = 1;
-            countdownbar.Maximum = countdown;
-            countdownbar.Value = countdown;
+            countdownbar.Maximum = countdown_global;
+            countdownbar.Value = countdown_global;
 
             countdownbar.Visible = true;
             countdowntimer.Enabled = true;
@@ -139,7 +139,7 @@ namespace Stempeluhr2
             init_config();
 
             //Datenbank initialisieren
-            init_db(dbserverconf, dbnameconf, dbuserconf, dbpwconf);
+            init_db(dbserverconf_global, dbnameconf_global, dbuserconf_global, dbpwconf_global);
 
             //Status Ready setzen
             setstatus("ready", "");
@@ -159,9 +159,9 @@ namespace Stempeluhr2
                 Anzeige.Text = "";
                 Stempelliste.Visible = false;
                 Detailanzeige.Visible = false;
-                status = "ready";
-                activeuser = "";
-                activetask = "";
+                status_global = "ready";
+                activeuser_global = "";
+                activetask_global = "";
                 Codefeld.Enabled = true;
                 Codefeld.Focus();
                 log("Status auf 'ready' gesetzt.");
@@ -172,14 +172,14 @@ namespace Stempeluhr2
                 Codefeld.Text = "";
                 Codefeld.Enabled = true;
                 MessageLabel.BackColor = Color.LightSkyBlue;
-                if (activetask != "")
+                if (activetask_global != "")
                 {
-                    Anzeige.Text = "Eingestempelt auf " + activetask + ". Bisher " + activetask_zeitbisher + " Zeiteinheiten";
+                    Anzeige.Text = "Eingestempelt auf " + activetask_global + ". Bisher " + activetask_zeitbisher_global + " Zeiteinheiten";
                 }else
                 {
                     Anzeige.Text = "Nicht eingestempelt";
                 }
-                status = "eingeloggt";
+                status_global = "eingeloggt";
                 message(statusmeldung);
                 log("Status auf 'eingeloggt' gesetzt. (" + statusmeldung + ")");
                 setCountdown(10);
@@ -191,12 +191,12 @@ namespace Stempeluhr2
                 MessageLabel.BackColor = Color.LightGreen;
                 message(statusmeldung);
                 Anzeige.Text = "";
-                status = "gestempelt";
+                status_global = "gestempelt";
                 Stempelliste.Visible = false;
                 Detailanzeige.Visible = false;
                 SystemSounds.Hand.Play();
-                activeuser = "";
-                activetask = "";
+                activeuser_global = "";
+                activetask_global = "";
                 setCountdown(3);
                 Codefeld.Enabled = true;
                 Codefeld.Focus();
@@ -209,9 +209,9 @@ namespace Stempeluhr2
                 MessageLabel.BackColor = Color.IndianRed;
                 message(statusmeldung);
                 Anzeige.Text = "";
-                status = "error";
-                activeuser = "";
-                activetask = "";
+                status_global = "error";
+                activeuser_global = "";
+                activetask_global = "";
                 log("Status auf 'error' gesetzt. (" + statusmeldung + ")");
                 setCountdown(2);
 
@@ -221,7 +221,7 @@ namespace Stempeluhr2
                 message(statusmeldung);
                 Stempelliste.Visible = true;
                 Detailanzeige.Visible = true;
-                status = "userinfos";
+                status_global = "userinfos";
                 Anzeige.Text = "";
                 Codefeld.Text = "";
                 MessageLabel.BackColor = Color.LightSkyBlue;
@@ -238,17 +238,17 @@ namespace Stempeluhr2
         private void uhrtimer_Tick(object sender, EventArgs e)
         {
             //Zeitvariablen setzen
-            jahr = DateTime.Now.Year.ToString("D4");
-            monat = DateTime.Now.Month.ToString("D2");
-            tag = DateTime.Now.Day.ToString("D2");
-            stunde = DateTime.Now.Hour.ToString("D2");
-            minute = DateTime.Now.Minute.ToString("D2");
-            sekunde = DateTime.Now.Second.ToString("D2");
+            jahr_global = DateTime.Now.Year.ToString("D4");
+            monat_global = DateTime.Now.Month.ToString("D2");
+            tag_global = DateTime.Now.Day.ToString("D2");
+            stunde_global = DateTime.Now.Hour.ToString("D2");
+            minute_global = DateTime.Now.Minute.ToString("D2");
+            sekunde_global = DateTime.Now.Second.ToString("D2");
             int zeiteinheit_int = ((DateTime.Now.Minute * 60) + DateTime.Now.Second) / 36;
-            zeiteinheit = zeiteinheit_int.ToString("D2");
+            zeiteinheit_global = zeiteinheit_int.ToString("D2");
 
             //Zeitanzeige aktualisieren
-            Zeitanzeige.Text = stunde + ":" + minute + ":" + sekunde;
+            Zeitanzeige.Text = stunde_global + ":" + minute_global + ":" + sekunde_global;
             Datumsanzeige.Text = DateTime.Now.ToShortDateString();
 
             //Debugausgabe auf Konsole
@@ -258,10 +258,10 @@ namespace Stempeluhr2
         }
         private void countdowntimer_Tick(object sender, EventArgs e)
         {
-            if (countdown > 0)
+            if (countdown_global > 0)
             {   
-                countdownbar.Value = countdown;
-                countdown--;
+                countdownbar.Value = countdown_global;
+                countdown_global--;
             }
             else
             {
@@ -315,7 +315,7 @@ namespace Stempeluhr2
         }
         private void progresscode(string code, string typ)
         {
-            if ((status == "ready") || (status == "gestempelt"))
+            if ((status_global == "ready") || (status_global == "gestempelt"))
             {
                 if (typ == "person")
                 {   //typ wie erwartet
@@ -324,22 +324,22 @@ namespace Stempeluhr2
                 {   //unerwarteter codetyp (person erwartet)
                     setstatus("error", "Bitte zuerst einloggen.");
                 }
-            }else if ((status == "eingeloggt") || (status == "userinfos"))
+            }else if ((status_global == "eingeloggt") || (status_global == "userinfos"))
             {
-                if (typ == "person" && code == activeuser)
+                if (typ == "person" && code == activeuser_global)
                 {   //nochmal der gleiche personencode gescannt
                     showdetails();
                 }else if(typ == "auftrag")
                 {   //person auf auftrag stempeln
-                    stempeln(activeuser, code);
+                    stempeln(activeuser_global, code);
                 }else if(typ == "sonder")
                 {   //sondercodes behandeln
-                    stempeln(activeuser, code);
+                    stempeln(activeuser_global, code);
                 }else if(typ == "abstempeln")
                 {   //abstempeln
-                    if (activetask != "")
+                    if (activetask_global != "")
                     {
-                        abstempeln(activeuser, activetask);
+                        abstempeln(activeuser_global, activetask_global);
                     }else
                     {
                         setstatus("error", "Nicht eingestempelt");
@@ -352,9 +352,9 @@ namespace Stempeluhr2
         }
         private void stempeln(string user, string auftrag)
         {
-            if(activetask != "")
+            if(activetask_global != "")
             {
-                abstempeln(user, activetask);
+                abstempeln(user, activetask_global);
             }
             anstempeln(user, auftrag);           
         }
@@ -362,8 +362,8 @@ namespace Stempeluhr2
         {
             open_db();
             comm.CommandText = "INSERT INTO stamps (userid,task,art,jahr,monat,tag,stunde,minute,sekunde,dezimal,quelle) " +
-                                "VALUES ('" + user + "','" + auftrag + "','an','" + jahr + "','" + monat + "','" +
-                                tag + "','" + stunde + "','" + minute + "','" + sekunde + "','" + zeiteinheit + "','INSERT')";
+                                "VALUES ('" + user + "','" + auftrag + "','an','" + jahr_global + "','" + monat_global + "','" +
+                                tag_global + "','" + stunde_global + "','" + minute_global + "','" + sekunde_global + "','" + zeiteinheit_global + "','INSERT')";
             try
             {
                 comm.ExecuteNonQuery();
@@ -391,8 +391,8 @@ namespace Stempeluhr2
         {
             open_db();
             comm.CommandText = "INSERT INTO stamps (userid,task,art,jahr,monat,tag,stunde,minute,sekunde,dezimal,quelle) "+
-                                "VALUES ('"+ user + "','" + auftrag +"','ab','" + jahr +"','" + monat +"','" + 
-                                tag +"','" + stunde +"','" + minute + "','" + sekunde +"','" + zeiteinheit + "','stempeluhr')";
+                                "VALUES ('"+ user + "','" + auftrag +"','ab','" + jahr_global +"','" + monat_global +"','" + 
+                                tag_global +"','" + stunde_global +"','" + minute_global + "','" + sekunde_global +"','" + zeiteinheit_global + "','stempeluhr')";
             try
             {
                 comm.ExecuteNonQuery();
@@ -427,7 +427,7 @@ namespace Stempeluhr2
             try
             {
                 open_db();
-                comm.CommandText = "SELECT * FROM user where userid='" + activeuser + "'";
+                comm.CommandText = "SELECT * FROM user where userid='" + activeuser_global + "'";
                 MySql.Data.MySqlClient.MySqlDataReader Reader = comm.ExecuteReader();
 
                 //Detailanzeige fuellen
@@ -445,8 +445,8 @@ namespace Stempeluhr2
                 
                 //Stempelliste fuellen
                 Stempelliste.Items.Clear();
-                comm.CommandText = "SELECT * FROM stamps where userid='" + activeuser +
-                                    "' and jahr ='" + jahr + "' and monat = '" + monat + "' and tag = '" + tag +
+                comm.CommandText = "SELECT * FROM stamps where userid='" + activeuser_global +
+                                    "' and jahr ='" + jahr_global + "' and monat = '" + monat_global + "' and tag = '" + tag_global +
                                     "' and art in ('ab','an')";
                 Reader = comm.ExecuteReader();
 
@@ -498,186 +498,25 @@ namespace Stempeluhr2
             close_db();
 
             if(count == 1)
-            {   //User gefunden... einloggen
+            {   //User gefunden... wartungen durchführen und einloggen
+                wartungslauf(usercode);
+
+                //Die wichtigsten Infos zum User aus der Datenbank holen
                 open_db();
-
-
-                ///////////////////// eventuelle Wartungen ////////////////////
-                int stempelungenheute = 0;
-                comm.CommandText = "SELECT count(*) FROM stamps where userid='" + usercode + "' AND tag='" + tag +"' AND monat='" + monat + "' AND jahr = '" + jahr +"'";
-                try
-                {
-                    stempelungenheute = int.Parse(comm.ExecuteScalar() + "");
-                }catch (Exception ex){log(ex.Message);}
-
-                if(stempelungenheute == 0)
-                {   //es gab noch keine stempelungen für diese person heute -> prüfen ob der stand sauber ist
-                    log("Noch keine Stempelungen heute auf " + usercode + ". Prüfe ob Wartung nötig...");
-                    
-                    //prüfen ob der zeitkonto_berechnungsstand weiter zurückliegt als gestern(abend)
-                    string berechnungsstand_string = "";
-                    comm.CommandText = "SELECT zeitkonto_berechnungsstand FROM user where userid='" + usercode + "'";
-                    try
-                    {
-                        berechnungsstand_string = comm.ExecuteScalar() + "";
-                    }
-                    catch (Exception ex) { log(ex.Message); }
-
-                    DateTime datum_gestern = DateTime.Now.AddDays(-1);
-                    DateTime datum_letzte_zeitberechnung = DateTime.ParseExact(berechnungsstand_string,"yyyyMMdd",null);
-
-                    if (DateTime.Compare(datum_letzte_zeitberechnung,datum_gestern) < 0) 
-                    {   //Berechnungsstand liegt weiter zurück als gestern -> auf stand von gestern bringen
-                        log("Letzte Zeitberechnung war am " + datum_letzte_zeitberechnung.ToLongDateString() + ". -> Bringe auf Stand von gestern.");
-
-                        //den letzen gestempelten tag sauber schliessen
-                        comm.CommandText = "select * from stamps where userid = '" + usercode + "' order by jahr DESC, monat desc, tag DESC, stunde desc, minute desc, sekunde desc, art desc limit 1";
-                        Reader = comm.ExecuteReader();
-                        Reader.Read();
-                        string letztestempelung_art = Reader["art"] + "";
-                        string letztestempelung_auftrag = Reader["task"] + "";
-                        string letztestempelung_jahr = Reader["jahr"] + "";
-                        string letztestempelung_monat = Reader["monat"] + "";
-                        string letztestempelung_tag = Reader["tag"] + "";
-                        string letztestempelung_stunde = Reader["stunde"] + "";
-                        string letztestempelung_minute = Reader["minute"] + "";
-                        string letztestempelung_sekunde = Reader["sekunde"] + "";
-                        string letztestempelung_zeiteinheit = Reader["dezimal"] + "";
-                        Reader.Close();
-
-                        if(letztestempelung_art != "ab")
-                        {   //letzte stempelung ist keine abstempelung -> nötige daten ermitteln und abstempeln
-                            log("Letzter Auftrag (" + letztestempelung_auftrag + ") am "+ letztestempelung_tag + "." + letztestempelung_monat + "." + letztestempelung_jahr + " wurde nicht abgestempelt...");
-                            
-
-                            comm.CommandText = "INSERT INTO stamps (userid,task,art,jahr,monat,tag,stunde,minute,sekunde,dezimal,quelle) " +
-                                               "VALUES ('" + usercode + "','" + letztestempelung_auftrag + "','ab','" + letztestempelung_jahr + "','" + 
-                                               letztestempelung_monat + "','" + letztestempelung_tag + "','" + letztestempelung_stunde + "','" + 
-                                               letztestempelung_minute + "','" + letztestempelung_sekunde + "','" + letztestempelung_zeiteinheit + "','wartung')";
-                            try
-                            {
-                                comm.ExecuteNonQuery();
-                                log("Automatische Abstempelung wird eingetragen. SQL:" + comm.CommandText);
-                            }
-                            catch (MySql.Data.MySqlClient.MySqlException ex){log(ex.Message);}
-
-                            //TODO Irgendwo auf die Automatische-Stempelung hinweisen
-                        }
-
-                        //tag für tag istzeit berechnen, mit sollzeit abgleichen, auf zeitkonto anrechnen bis zeitkontostand bei gestern abend ist
-                        while (DateTime.Compare(datum_letzte_zeitberechnung, datum_gestern) < 0)
-                        {
-                            DateTime berechnungsdatum = datum_letzte_zeitberechnung.AddDays(1).Date;
-                            string berechnungsjahr = berechnungsdatum.Year.ToString("D4");
-                            string berechnungsmonat = berechnungsdatum.Month.ToString("D2");
-                            string berechnungstag = berechnungsdatum.Day.ToString("D2");
-
-                            double berechneteIstZeit = ermittleIstZeit(usercode, berechnungsjahr, berechnungsmonat, berechnungstag);
-                            double berechneteSollZeit = ermittleSollZeit(usercode, berechnungsjahr, berechnungsmonat, berechnungstag);
-                            double berechneteUeberstunden = berechneteIstZeit - berechneteSollZeit;
-                            double zeitkontostand_bisher = 0;
-                            double zeitkontostand_neu = 0;
-
-                            //bisherigen zeitkontostand abfragen
-                            comm.CommandText = "SELECT zeitkonto FROM user where userid='" + usercode + "'";
-                            try
-                            {
-                                zeitkontostand_bisher = double.Parse(comm.ExecuteScalar() + "");
-                            }catch (Exception ex) { log(ex.Message); }
-
-                            zeitkontostand_neu = zeitkontostand_bisher + berechneteUeberstunden;
-                            
-
-                            //neuen zeitkontostand beim Mitarbeiter eintragen und berechnungsstand auf das berechnungsdatum setzen
-                            comm.CommandText = "UPDATE user SET zeitkonto='" + zeitkontostand_neu + 
-                                                "',zeitkonto_berechnungsstand = '" + berechnungsjahr + berechnungsmonat + berechnungstag + 
-                                                "' where userid = '" + usercode + "'";
-                            try
-                            {
-                                comm.ExecuteNonQuery();
-                                log("Zeitkonto aktualisiert. SQL:" + comm.CommandText);
-                            }
-                            catch (MySql.Data.MySqlClient.MySqlException ex)
-                            {
-                                log(ex.Message);
-                            }
-                            datum_letzte_zeitberechnung = berechnungsdatum;
-                            log("Zeitberechnung ist jetzt auf dem Stand vom " + datum_letzte_zeitberechnung.ToLongDateString());
-
-                        }
-
-                    }
-
-                    //////// wartungen abgeschlossen
-
-                }    
-
                 comm.CommandText = "SELECT name, vorname, currenttask FROM user where userid='" + usercode + "'";
                 Reader = comm.ExecuteReader();
-                //Read the data and store them in the list
                 Reader.Read();
                 username = Reader["vorname"] + " " +  Reader["name"] + "";
                 currenttask = Reader["currenttask"] + "";
                 Reader.Close();
 
-                activeuser = usercode;
-                activetask = currenttask;
+                activeuser_global = usercode;
+                activetask_global = currenttask;
 
                 if(currenttask!= "")
                 {//Zeit ermitteln, die die Person schon auf dem Auftrag gearbeitet hat
-
-                    int summe_abstempelungen = 0;
-                    int summe_anstempelungen = 0;
-                    string sumstring = "";
-                    comm.CommandText = "SELECT ((sum(stunde) * 100)  + sum(dezimal)) FROM stamps WHERE userid = '"
-                                    + activeuser + "' and task = '" + currenttask + "' and art='ab'" ;
-                    try
-                    {  
-                        sumstring = comm.ExecuteScalar() + "";
-                        if(sumstring == "")
-                        {
-                            sumstring = "0";
-                        }
-                        summe_abstempelungen = int.Parse(sumstring);
-                        summe_abstempelungen = summe_abstempelungen + int.Parse(stunde) * 100 + int.Parse(zeiteinheit) ;
-                        log("Summe abstempelungen: " + summe_abstempelungen);
-                    }
-                    catch (MySql.Data.MySqlClient.MySqlException ex)
-                    {
-                        log(ex.Message);
-                    }
-
-                    comm.CommandText = "SELECT ((sum(stunde) * 100)  + sum(dezimal)) FROM stamps WHERE userid = '"
-                                    + activeuser + "' and task = '" + currenttask + "' and art='an'";
-                    try
-                    {
-                        sumstring = comm.ExecuteScalar() + "";
-                        if (sumstring == "")
-                        {
-                            sumstring = "0";
-                        }
-                        summe_anstempelungen = int.Parse(sumstring);
-                        log("Summe anstempelungen: " + summe_abstempelungen);
-                    }
-                    catch (MySql.Data.MySqlClient.MySqlException ex)
-                    {
-                        log(ex.Message);
-                    }
-                    int activetask_zeitbisher_stunden = (summe_abstempelungen - summe_anstempelungen) / 100;
-                    int activetask_zeitbisher_decimal = (summe_abstempelungen - summe_anstempelungen) % 100;
-                    activetask_zeitbisher = activetask_zeitbisher_stunden.ToString() + "," + activetask_zeitbisher_decimal.ToString("D2");
-
-                    //debugausgaben für die Berechnung
-                    //log("summe abstempelungen: " + summe_abstempelungen);
-                    //log("summe anstempelungen: " + summe_anstempelungen);
-                    //log("stunden bisher: " + activetask_zeitbisher_stunden);
-                    //log("dezimal bisher: " + activetask_zeitbisher_decimal);
-                    //log("zeitbisher: " + activetask_zeitbisher);
-
+                    berechne_activetask_zeitbisher_global();
                 }
-
-                
-
 
                 setstatus("eingeloggt", "Angemeldet als " + username);
 
@@ -691,6 +530,163 @@ namespace Stempeluhr2
             }
 
 
+        }
+        private void berechne_activetask_zeitbisher_global()
+        {
+            int summe_abstempelungen = 0;
+            int summe_anstempelungen = 0;
+            string sumstring = "";
+            comm.CommandText = "SELECT ((sum(stunde) * 100)  + sum(dezimal)) FROM stamps WHERE userid = '"
+                            + activeuser_global + "' and task = '" + activetask_global + "' and art='ab'";
+            try
+            {
+                sumstring = comm.ExecuteScalar() + "";
+                if (sumstring == "")
+                {
+                    sumstring = "0";
+                }
+                summe_abstempelungen = int.Parse(sumstring);
+                summe_abstempelungen = summe_abstempelungen + int.Parse(stunde_global) * 100 + int.Parse(zeiteinheit_global);
+                log("Summe abstempelungen: " + summe_abstempelungen);
+            }
+            catch (MySql.Data.MySqlClient.MySqlException ex)
+            {
+                log(ex.Message);
+            }
+
+            comm.CommandText = "SELECT ((sum(stunde) * 100)  + sum(dezimal)) FROM stamps WHERE userid = '"
+                            + activeuser_global + "' and task = '" + activetask_global + "' and art='an'";
+            try
+            {
+                sumstring = comm.ExecuteScalar() + "";
+                if (sumstring == "")
+                {
+                    sumstring = "0";
+                }
+                summe_anstempelungen = int.Parse(sumstring);
+                log("Summe anstempelungen: " + summe_abstempelungen);
+            }
+            catch (MySql.Data.MySqlClient.MySqlException ex)
+            {
+                log(ex.Message);
+            }
+            int activetask_zeitbisher_stunden = (summe_abstempelungen - summe_anstempelungen) / 100;
+            int activetask_zeitbisher_decimal = (summe_abstempelungen - summe_anstempelungen) % 100;
+            activetask_zeitbisher_global = activetask_zeitbisher_stunden.ToString() + "," + activetask_zeitbisher_decimal.ToString("D2");
+        }
+        private void wartungslauf(String usercode)
+        {
+            MySql.Data.MySqlClient.MySqlDataReader Reader;
+            int stempelungenheute = 0;
+            comm.CommandText = "SELECT count(*) FROM stamps where userid='" + usercode + "' AND tag='" + tag_global + "' AND monat='" + monat_global + "' AND jahr = '" + jahr_global + "'";
+            try
+            {
+                stempelungenheute = int.Parse(comm.ExecuteScalar() + "");
+            }
+            catch (Exception ex) { log(ex.Message); }
+
+            if (stempelungenheute == 0)
+            {   //es gab noch keine stempelungen für diese person heute -> prüfen ob der stand sauber ist
+                log("Noch keine Stempelungen heute auf " + usercode + ". Prüfe ob Wartung nötig...");
+
+                //prüfen ob der zeitkonto_berechnungsstand weiter zurückliegt als gestern(abend)
+                string berechnungsstand_string = "";
+                comm.CommandText = "SELECT zeitkonto_berechnungsstand FROM user where userid='" + usercode + "'";
+                try
+                {
+                    berechnungsstand_string = comm.ExecuteScalar() + "";
+                }
+                catch (Exception ex) { log(ex.Message); }
+
+                DateTime datum_gestern = DateTime.Now.AddDays(-1);
+                DateTime datum_letzte_zeitberechnung = DateTime.ParseExact(berechnungsstand_string, "yyyyMMdd", null);
+
+                if (DateTime.Compare(datum_letzte_zeitberechnung, datum_gestern) < 0)
+                {   //Berechnungsstand liegt weiter zurück als gestern -> auf stand von gestern bringen
+                    log("Letzte Zeitberechnung war am " + datum_letzte_zeitberechnung.ToLongDateString() + ". -> Bringe auf Stand von gestern.");
+
+                    //den letzen gestempelten tag sauber schliessen
+                    comm.CommandText = "select * from stamps where userid = '" + usercode + "' order by jahr DESC, monat desc, tag DESC, stunde desc, minute desc, sekunde desc, art desc limit 1";
+                    Reader = comm.ExecuteReader();
+                    Reader.Read();
+                    string letztestempelung_art = Reader["art"] + "";
+                    string letztestempelung_auftrag = Reader["task"] + "";
+                    string letztestempelung_jahr = Reader["jahr"] + "";
+                    string letztestempelung_monat = Reader["monat"] + "";
+                    string letztestempelung_tag = Reader["tag"] + "";
+                    string letztestempelung_stunde = Reader["stunde"] + "";
+                    string letztestempelung_minute = Reader["minute"] + "";
+                    string letztestempelung_sekunde = Reader["sekunde"] + "";
+                    string letztestempelung_zeiteinheit = Reader["dezimal"] + "";
+                    Reader.Close();
+
+                    if (letztestempelung_art != "ab")
+                    {   //letzte stempelung ist keine abstempelung -> nötige daten ermitteln und abstempeln
+                        log("Letzter Auftrag (" + letztestempelung_auftrag + ") am " + letztestempelung_tag + "." + letztestempelung_monat + "." + letztestempelung_jahr + " wurde nicht abgestempelt...");
+
+
+                        comm.CommandText = "INSERT INTO stamps (userid,task,art,jahr,monat,tag,stunde,minute,sekunde,dezimal,quelle) " +
+                                           "VALUES ('" + usercode + "','" + letztestempelung_auftrag + "','ab','" + letztestempelung_jahr + "','" +
+                                           letztestempelung_monat + "','" + letztestempelung_tag + "','" + letztestempelung_stunde + "','" +
+                                           letztestempelung_minute + "','" + letztestempelung_sekunde + "','" + letztestempelung_zeiteinheit + "','wartung')";
+                        try
+                        {
+                            comm.ExecuteNonQuery();
+                            log("Automatische Abstempelung wird eingetragen. SQL:" + comm.CommandText);
+                        }
+                        catch (MySql.Data.MySqlClient.MySqlException ex) { log(ex.Message); }
+
+                        //TODO Irgendwo auf die Automatische-Stempelung hinweisen
+                    }
+
+                    //tag für tag istzeit berechnen, mit sollzeit abgleichen, auf zeitkonto anrechnen bis zeitkontostand bei gestern abend ist
+                    while (DateTime.Compare(datum_letzte_zeitberechnung, datum_gestern) < 0)
+                    {
+                        DateTime berechnungsdatum = datum_letzte_zeitberechnung.AddDays(1).Date;
+                        string berechnungsjahr = berechnungsdatum.Year.ToString("D4");
+                        string berechnungsmonat = berechnungsdatum.Month.ToString("D2");
+                        string berechnungstag = berechnungsdatum.Day.ToString("D2");
+
+                        double berechneteIstZeit = ermittleIstZeit(usercode, berechnungsjahr, berechnungsmonat, berechnungstag);
+                        double berechneteSollZeit = ermittleSollZeit(usercode, berechnungsjahr, berechnungsmonat, berechnungstag);
+                        double berechneteUeberstunden = berechneteIstZeit - berechneteSollZeit;
+                        double zeitkontostand_bisher = 0;
+                        double zeitkontostand_neu = 0;
+
+                        //bisherigen zeitkontostand abfragen
+                        comm.CommandText = "SELECT zeitkonto FROM user where userid='" + usercode + "'";
+                        try
+                        {
+                            zeitkontostand_bisher = double.Parse(comm.ExecuteScalar() + "");
+                        }
+                        catch (Exception ex) { log(ex.Message); }
+
+                        zeitkontostand_neu = zeitkontostand_bisher + berechneteUeberstunden;
+
+
+                        //neuen zeitkontostand beim Mitarbeiter eintragen und berechnungsstand auf das berechnungsdatum setzen
+                        comm.CommandText = "UPDATE user SET zeitkonto='" + zeitkontostand_neu +
+                                            "',zeitkonto_berechnungsstand = '" + berechnungsjahr + berechnungsmonat + berechnungstag +
+                                            "' where userid = '" + usercode + "'";
+                        try
+                        {
+                            comm.ExecuteNonQuery();
+                            log("Zeitkonto aktualisiert. SQL:" + comm.CommandText);
+                        }
+                        catch (MySql.Data.MySqlClient.MySqlException ex)
+                        {
+                            log(ex.Message);
+                        }
+                        datum_letzte_zeitberechnung = berechnungsdatum;
+                        log("Zeitberechnung ist jetzt auf dem Stand vom " + datum_letzte_zeitberechnung.ToLongDateString());
+
+                    }
+
+                }
+
+                //////// wartungen abgeschlossen
+
+            }
         }
         private double ermittleIstZeit(string usercode, string berechnungsjahr, string berechnungsmonat, string berechnungstag)
         {   
