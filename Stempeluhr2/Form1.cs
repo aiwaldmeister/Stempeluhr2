@@ -45,7 +45,6 @@ namespace Stempeluhr2
         MySql.Data.MySqlClient.MySqlCommand comm = new MySql.Data.MySqlClient.MySqlCommand();
         System.Media.SoundPlayer Sound = new System.Media.SoundPlayer();
 
-        //TODO passende soundfiles besorgen und zur exe legen
 
         string logfilename_global;
 
@@ -173,8 +172,8 @@ namespace Stempeluhr2
             countdownbar.Visible = false;
         }
         private void playsound(string soundart)
-        {
-            if(soundart == "error")
+        {//TODO passende soundfiles besorgen und zur exe legen
+            if (soundart == "error")
             {
                 Sound.SoundLocation = "error.wav";
                 try
@@ -297,9 +296,6 @@ namespace Stempeluhr2
             Zeitanzeige.Text = stunde_global + ":" + minute_global + ":" + sekunde_global;
             Datumsanzeige.Text = DateTime.Now.ToShortDateString();
 
-            //Debugausgabe auf Konsole
-            //Console.WriteLine("Zeitwerte gesetzt... (jahr:" + jahr + " monat:" + monat + " tag:" + tag + " stunde:" + 
-            //                    stunde + " minute:" +  minute + " sekunde:" + sekunde+ " zeiteinheit:" + zeiteinheit);
 
         }
         private void countdowntimer_Tick(object sender, EventArgs e)
