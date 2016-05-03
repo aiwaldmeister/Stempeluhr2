@@ -53,6 +53,7 @@ namespace Stempeluhr2
         {
             InitializeComponent();
         }
+
         private void Form1_Load(object sender, EventArgs e)
         {
 
@@ -69,14 +70,17 @@ namespace Stempeluhr2
             setstatus("ready", "");
 
         }
+
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             log("Programm wird beendet.......................................................................");
         }
+
         private void Codefeld_KeyPress(object sender, KeyPressEventArgs e)
         {
             //funktion ausgelagert zum KeyDown Event
         }
+
         private void Codefeld_KeyDown(object sender, KeyEventArgs e)
         {   //Die Taste wird vor dem eigentlichen Tastendruck abgefangen um das Enter-'Ding'-Geräusch zu unterdrücken.
             if (e.KeyCode == Keys.Enter)
@@ -86,10 +90,12 @@ namespace Stempeluhr2
                 e.SuppressKeyPress = true;  
             }
         }
+
         private void textBox1_TextChanged(object sender, EventArgs e)
         {
 
         }
+
         private void init_logfile()
         {
             logfilename_global = DateTime.Now.Year.ToString("D4") + DateTime.Now.Month.ToString("D2") + DateTime.Now.Day.ToString("D2") + ".log";
@@ -97,6 +103,7 @@ namespace Stempeluhr2
             log("Logfile geladen.");
 
         }
+
         private void init_config()
         {
             dbserverconf_global = System.Configuration.ConfigurationManager.AppSettings["dbserver"];
@@ -106,11 +113,13 @@ namespace Stempeluhr2
 
             log("Config-File gelesen, Datenbankinfos gesetzt.('" + dbserverconf_global + "','" + dbnameconf_global + "','" + dbuserconf_global + "','" + dbpwconf_global + "')");
         }
+
         private void init_db(string server, string database, string uid, string password)
         {
             conn.ConnectionString = "SERVER = " + server + "; " + "DATABASE = " + database + ";" + "UID=" + uid + ";" + "PASSWORD=" + password + ";";
             log("Datenbank ConnectionString initialisiert");
         }
+
         private bool open_db()
         {
             try
@@ -127,6 +136,7 @@ namespace Stempeluhr2
                 return false;
             }
         }
+
         private bool close_db()
         {
             try
@@ -142,6 +152,7 @@ namespace Stempeluhr2
                 return false;
             }
         }
+
         private void log(String text)
         {
             using (StreamWriter file = new StreamWriter(logfilename_global, true))
@@ -150,11 +161,13 @@ namespace Stempeluhr2
             }
             Console.WriteLine("Log: " + DateTime.Now.ToLongTimeString() + ": " + text);
         }
+
         private void message(string text, Color farbe)
         {
             MessageLabel.Text = text;
             MessageLabel.BackColor = farbe;
         }
+
         private void setCountdown(int sekunden)
         {
             countdown_global = sekunden * 10;
@@ -167,11 +180,13 @@ namespace Stempeluhr2
 
             log("countdown auf " + sekunden + " gesetzt");
         }
+
         private void stopCountdown()
         {
             countdowntimer.Enabled = false;
             countdownbar.Visible = false;
         }
+
         private void playsound(string soundart)
         {
             if (soundart == "error")
@@ -193,6 +208,7 @@ namespace Stempeluhr2
             }
 
         }
+
         private void setstatus(string zielstatus, string statusmeldung)
         {
             
@@ -277,6 +293,7 @@ namespace Stempeluhr2
             }
 
         }
+
         private void uhrtimer_Tick(object sender, EventArgs e)
         {
             //Zeitvariablen setzen
@@ -295,6 +312,7 @@ namespace Stempeluhr2
 
 
         }
+
         private void countdowntimer_Tick(object sender, EventArgs e)
         {
             if (countdown_global > 0)
@@ -308,6 +326,7 @@ namespace Stempeluhr2
                 setstatus("ready", "");
             }
         }
+
         private void codeeingabe(string code)
         {
             int tmpcode;    //wegwerfvariable fuer den out-parameter von tryparse
@@ -348,6 +367,7 @@ namespace Stempeluhr2
                 progresscode(code, "auftrag");
             }
         }
+
         private void progresscode(string code, string typ)
         {
             if ((status_global == "ready") || (status_global == "gestempelt"))
@@ -385,6 +405,7 @@ namespace Stempeluhr2
                 }
             }
         }
+
         private void stempeln(string user, string auftrag)
         {
             if(activetask_global != "")
@@ -393,6 +414,7 @@ namespace Stempeluhr2
             }
             anstempeln(user, auftrag);           
         }
+
         private bool anstempeln(string user, string auftrag)
         {
             open_db();
@@ -424,6 +446,7 @@ namespace Stempeluhr2
             setstatus("gestempelt", user + " auf Auftrag " + auftrag + " eingestempelt.");
             return true;
         }
+
         private bool abstempeln(string user, string auftrag)
         {
             open_db();
@@ -455,11 +478,12 @@ namespace Stempeluhr2
             setstatus("gestempelt", user + " von Auftrag " + auftrag + " ausgestempelt.");
             return true;
         }
+
         private bool showdetails()
-        {//TODO Detailwerte ermitteln
+        {
             string name = "";
             string zeitkonto = "";
-            string verrechenbare_zeit = "";
+            string zeitkonto_berechnungsstand = "";
             string resturlaub = "";
             string planurlaub = "";
 
@@ -474,17 +498,23 @@ namespace Stempeluhr2
                 Reader.Read();
                 name = Reader["vorname"] + " " + Reader["name"] + "";
                 zeitkonto = Reader["zeitkonto"] + "";
-                verrechenbare_zeit = Reader["verrechenbare_zeit"] + "";
+                zeitkonto_berechnungsstand = Reader["zeitkonto_berechnungsstand"] + "";
                 resturlaub = Reader["resturlaub"] + "";
                 planurlaub = Reader["geplante_urlaubstage"] + "";
                 Reader.Close();
-                Detailanzeige.Text = "Zeitkonto\r\n" + zeitkonto + "\r\n\r\n" +
-                                     "Verrechnete Zeit\r\n" + verrechenbare_zeit + "\r\n\r\n" +
-                                    "Resturlaub\r\n" + resturlaub + "\r\n\r\n" +
-                                    "Geplanter Urlaub\r\n" + planurlaub;
+                close_db();
+                
+                //Datum von yyyyMMdd in lesbareres Format bringen
+                zeitkonto_berechnungsstand = DateTime.ParseExact(zeitkonto_berechnungsstand, "yyyyMMdd", null).ToLongDateString();
+
+                Detailanzeige.Text = "Stundenkonto\r\n" + zeitkonto + "\r\n\r\n" +
+                                     "Stand der Stundenberechnung\r\n" + zeitkonto_berechnungsstand + "\r\n\r\n" +
+                                    "Resturlaub bis Jahresende\r\n" + resturlaub + "\r\n\r\n" +
+                                    "Bereits geplante Urlaubstage\r\n" + planurlaub;
                 
                 //Stempelliste fuellen
                 Stempelliste.Items.Clear();
+                open_db();
                 comm.CommandText = "SELECT * FROM stamps where userid='" + activeuser_global +
                                     "' and jahr ='" + jahr_global + "' and monat = '" + monat_global + "' and tag = '" + tag_global +
                                     "' and art in ('ab','an')";
@@ -525,6 +555,7 @@ namespace Stempeluhr2
             setstatus("userinfos", "Details zu " + name);
             return true;
         }
+
         private bool einloggen(string usercode)
         {
             userwarnung_global = "";
@@ -615,6 +646,7 @@ namespace Stempeluhr2
 
 
         }
+
         private void berechne_activetask_zeitbisher_global()
         {
             int summe_abstempelungen = 0;
@@ -660,6 +692,7 @@ namespace Stempeluhr2
             int activetask_zeitbisher_decimal = (summe_abstempelungen - summe_anstempelungen) % 100;
             activetask_zeitbisher_global = activetask_zeitbisher_stunden.ToString() + "," + activetask_zeitbisher_decimal.ToString("D2");
         }
+
         private void wartungslauf(String usercode)
         {
             MySql.Data.MySqlClient.MySqlDataReader Reader;
@@ -689,8 +722,9 @@ namespace Stempeluhr2
                 }
                 catch (Exception ex) { log("SQL: " + comm.CommandText + " Error: " + ex.Message); }
                 close_db();
-                DateTime datum_gestern = DateTime.Now.AddDays(-1);
-                //TODO datum_gestern auf 00:00 Uhr bringen, damit der Vergleich mit dem datum der letzten Berechnung funktioniert
+                DateTime datummituhrzeit_gestern = DateTime.Now.AddDays(-1);
+                DateTime datum_gestern = new DateTime(datummituhrzeit_gestern.Year,datummituhrzeit_gestern.Month,datummituhrzeit_gestern.Day);
+                //TODO testen ob Uhrzeit von datum_gestern auf 00:00 Uhr steht, damit der Vergleich mit dem datum der letzten Berechnung funktioniert
                 
                 DateTime datum_letzte_zeitberechnung = DateTime.ParseExact(berechnungsstand_string, "yyyyMMdd", null);
 
@@ -801,6 +835,7 @@ namespace Stempeluhr2
                 }
             }
         }
+
         private double ermittleIstZeit(string usercode, string berechnungsjahr, string berechnungsmonat, string berechnungstag)
         {   
             double Istzeit_tmp = 0;
@@ -892,6 +927,7 @@ namespace Stempeluhr2
                 return -1;
             }
         }
+
         private double ermittleSollZeit(string usercode, string berechnungsjahr, string berechnungsmonat, string berechnungstag)
         {   //sollzeit ermitteln (persoenlicher kalendereintrag > allgemeiner kalendereintrag > fallback(wochenende 0, sonst 7,2)
             double sollzeit = 0;

@@ -165,7 +165,7 @@
             this.Stempelliste.Location = new System.Drawing.Point(0, 0);
             this.Stempelliste.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
             this.Stempelliste.Name = "Stempelliste";
-            this.Stempelliste.Size = new System.Drawing.Size(806, 520);
+            this.Stempelliste.Size = new System.Drawing.Size(806, 535);
             this.Stempelliste.SmallImageList = this.Stempelicons;
             this.Stempelliste.TabIndex = 5;
             this.Stempelliste.UseCompatibleStateImageBehavior = false;
@@ -184,7 +184,7 @@
             this.Detailanzeige.TabIndex = 6;
             this.Detailanzeige.Text = "Stundenkonto\r\n00.00\r\n\r\nStand der Stundenberechnung\r\n01.01.2016\r\n\r\nResturlaub bis " +
     "Jahresende\r\n00.00\r\n\r\nBereits geplante Urlaubstage\r\n00.00";
-            this.Detailanzeige.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            this.Detailanzeige.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // tabControl1
             // 
@@ -262,7 +262,7 @@
             this.splitContainer2.Panel2.Controls.Add(this.Stempelliste);
             this.splitContainer2.Panel2.RightToLeft = System.Windows.Forms.RightToLeft.No;
             this.splitContainer2.Size = new System.Drawing.Size(806, 585);
-            this.splitContainer2.SplitterDistance = 61;
+            this.splitContainer2.SplitterDistance = 46;
             this.splitContainer2.TabIndex = 6;
             // 
             // label1
@@ -273,7 +273,7 @@
             this.label1.Font = new System.Drawing.Font("Courier New", 21.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label1.Location = new System.Drawing.Point(0, 0);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(806, 61);
+            this.label1.Size = new System.Drawing.Size(806, 46);
             this.label1.TabIndex = 0;
             this.label1.Text = "Heutige Stempelungen";
             this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
