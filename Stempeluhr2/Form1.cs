@@ -485,6 +485,9 @@ namespace Stempeluhr2
             string zeitkonto = "";
             string zeitkonto_berechnungsstand = "";
             string resturlaub = "";
+            string bonuszeit_gesternabend = "";
+            string bonuskonto_ausgezahlt_bis = "";
+            string bonuszeit_bei_letzter_auszahlung = "";
             string planurlaub = "";
 
             try
@@ -499,18 +502,25 @@ namespace Stempeluhr2
                 name = Reader["vorname"] + " " + Reader["name"] + "";
                 zeitkonto = Reader["zeitkonto"] + "";
                 zeitkonto_berechnungsstand = Reader["zeitkonto_berechnungsstand"] + "";
-                resturlaub = Reader["resturlaub"] + "";
-                planurlaub = Reader["geplante_urlaubstage"] + "";
+                bonuskonto_ausgezahlt_bis = Reader["bonuskonto_ausgezahlt_bis"] + "";
+                bonuszeit_bei_letzter_auszahlung = Reader["bonuszeit_bei_letzter_auszahlung"] + "";
                 Reader.Close();
                 close_db();
-                
-                //Datum von yyyyMMdd in lesbareres Format bringen
+
+                //TODO Bonuszeit, Urlaub, Resturlaub on the fly berechnen
+
+                //Datumsangaben von yyyyMMdd in lesbareres Format bringen
                 zeitkonto_berechnungsstand = DateTime.ParseExact(zeitkonto_berechnungsstand, "yyyyMMdd", null).ToLongDateString();
+                bonuskonto_ausgezahlt_bis = DateTime.ParseExact(bonuskonto_ausgezahlt_bis, "yyyyMMdd", null).ToLongDateString();
 
                 Detailanzeige.Text = "Stundenkonto\r\n" + zeitkonto + "\r\n\r\n" +
                                      "Stand der Stundenberechnung\r\n" + zeitkonto_berechnungsstand + "\r\n\r\n" +
-                                    "Resturlaub bis Jahresende\r\n" + resturlaub + "\r\n\r\n" +
-                                    "Bereits geplante Urlaubstage\r\n" + planurlaub;
+                                    "Resturlaub bis Jahresende\r\n" + resturlaub + " Tage\r\n\r\n" +
+                                    "Bereits geplanter Urlaub\r\n" + planurlaub + " Tage\r\n\r\n" +
+                                    "--------------------------------------------------\r\n\r\n" +
+                                    "Bonuszeiten ausgezahlt bis \r\n" + bonuskonto_ausgezahlt_bis + "\r\n\r\n" +
+                                    "Bonus bei der letzten Auszahlung\r\n" + bonuszeit_bei_letzter_auszahlung + " Stunden\r\n\r\n" +
+                                    "Bonuszeit (Stand gestern Abend)\r\n" + bonuszeit_gesternabend;
                 
                 //Stempelliste fuellen
                 Stempelliste.Items.Clear();
