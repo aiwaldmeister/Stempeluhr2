@@ -220,6 +220,7 @@ namespace Stempeluhr2
                 Anzeige.Text = "";
                 Stempelliste.Visible = false;
                 Detailanzeige.Visible = false;
+                tabControl1.SelectedIndex = 0;
                 status_global = "ready";
                 activeuser_global = "";
                 activetask_global = "";
@@ -257,6 +258,7 @@ namespace Stempeluhr2
                 status_global = "gestempelt";
                 Stempelliste.Visible = false;
                 Detailanzeige.Visible = false;
+                tabControl1.SelectedIndex = 0;
                 activeuser_global = "";
                 activetask_global = "";
                 setCountdown(3);
@@ -284,6 +286,7 @@ namespace Stempeluhr2
                 message(statusmeldung, Color.LightSkyBlue);
                 Stempelliste.Visible = true;
                 Detailanzeige.Visible = true;
+                tabControl1.SelectedIndex = 1;
                 status_global = "userinfos";
                 Anzeige.Text = "";
                 Codefeld.Text = "";
@@ -508,19 +511,34 @@ namespace Stempeluhr2
                 close_db();
 
                 //TODO Bonuszeit, Urlaub, Resturlaub on the fly berechnen
+                bonuszeit_gesternabend = "0,00";
+                resturlaub = "30";
+                planurlaub = "0";
 
                 //Datumsangaben von yyyyMMdd in lesbareres Format bringen
-                zeitkonto_berechnungsstand = DateTime.ParseExact(zeitkonto_berechnungsstand, "yyyyMMdd", null).ToLongDateString();
-                bonuskonto_ausgezahlt_bis = DateTime.ParseExact(bonuskonto_ausgezahlt_bis, "yyyyMMdd", null).ToLongDateString();
+                if(zeitkonto_berechnungsstand.Length == 8)
+                {
+                    zeitkonto_berechnungsstand = DateTime.ParseExact(zeitkonto_berechnungsstand, "yyyyMMdd", null).ToLongDateString();
+
+                }
+                if(bonuskonto_ausgezahlt_bis.Length == 8)
+                {
+                    bonuskonto_ausgezahlt_bis = DateTime.ParseExact(bonuskonto_ausgezahlt_bis, "yyyyMMdd", null).ToLongDateString();
+
+                }else if(bonuskonto_ausgezahlt_bis == "")
+                {
+                    bonuskonto_ausgezahlt_bis = "<Bisher keine Auszahlung>";
+                }
+
 
                 Detailanzeige.Text = "Stundenkonto\r\n" + zeitkonto + "\r\n\r\n" +
                                      "Stand der Stundenberechnung\r\n" + zeitkonto_berechnungsstand + "\r\n\r\n" +
                                     "Resturlaub bis Jahresende\r\n" + resturlaub + " Tage\r\n\r\n" +
                                     "Bereits geplanter Urlaub\r\n" + planurlaub + " Tage\r\n\r\n" +
-                                    "--------------------------------------------------\r\n\r\n" +
+                                    "_________________________\r\n\r\n\r\n" +
                                     "Bonuszeiten ausgezahlt bis \r\n" + bonuskonto_ausgezahlt_bis + "\r\n\r\n" +
                                     "Bonus bei der letzten Auszahlung\r\n" + bonuszeit_bei_letzter_auszahlung + " Stunden\r\n\r\n" +
-                                    "Bonuszeit (Stand gestern Abend)\r\n" + bonuszeit_gesternabend;
+                                    "Bonuszeit (Stand gestern Abend)\r\n" + bonuszeit_gesternabend + " Stunden";
                 
                 //Stempelliste fuellen
                 Stempelliste.Items.Clear();
@@ -574,7 +592,7 @@ namespace Stempeluhr2
 
             string username = "";
             string currenttask = "";
-            string stempelfehler = "";
+            int stempelfehler = 0;
             int autostempelungen = 0;
 
             //prüfen ob person angelegt ist
@@ -605,7 +623,7 @@ namespace Stempeluhr2
                     Reader.Read();
                     username = Reader["vorname"] + " " +  Reader["name"] + "";
                     currenttask = Reader["currenttask"] + "";
-                    stempelfehler = Reader["stempelfehler"] + "";
+                    stempelfehler = int.Parse(Reader["stempelfehler"] + "");
                     Reader.Close();
                 }
                 catch (Exception ex) { log(ex.Message); }
@@ -626,7 +644,7 @@ namespace Stempeluhr2
                     userwarnung_global = "Unkorrigierte automatische Abstempelungen vorhanden!";
                 }
                 
-                if(stempelfehler == "true")
+                if(stempelfehler == 1)
                 {
                     if(userwarnung_global != "") userwarnung_global = userwarnung_global + "\r\n";
                     userwarnung_global = userwarnung_global + "Fehlerhafte Stempelungen -> Zeitberechnung nicht möglich!";
@@ -798,7 +816,7 @@ namespace Stempeluhr2
                             fehlerflag = true;
                             log("Fehler bei der Zeitberechnung -> Stundenkonto wird nicht aktualisiert");
                             open_db();
-                            comm.CommandText = "UPDATE user SET stempelfehler='true' where userid = '" + usercode + "'";
+                            comm.CommandText = "UPDATE user SET stempelfehler='1' where userid = '" + usercode + "'";
                             log("SQL:" + comm.CommandText);
                             try
                             {

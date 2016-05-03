@@ -124,7 +124,7 @@
             // Anzeige
             // 
             this.Anzeige.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.Anzeige.Font = new System.Drawing.Font("Courier New", 21.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Anzeige.Font = new System.Drawing.Font("Courier New", 27.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Anzeige.Location = new System.Drawing.Point(3, 3);
             this.Anzeige.Margin = new System.Windows.Forms.Padding(0);
             this.Anzeige.Name = "Anzeige";
@@ -177,7 +177,7 @@
             // 
             this.Detailanzeige.BackColor = System.Drawing.SystemColors.Window;
             this.Detailanzeige.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.Detailanzeige.Font = new System.Drawing.Font("Courier New", 27.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Detailanzeige.Font = new System.Drawing.Font("Courier New", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Detailanzeige.Location = new System.Drawing.Point(0, 0);
             this.Detailanzeige.Margin = new System.Windows.Forms.Padding(0);
             this.Detailanzeige.Name = "Detailanzeige";
@@ -271,7 +271,7 @@
             // 
             this.label1.BackColor = System.Drawing.Color.White;
             this.label1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.label1.Font = new System.Drawing.Font("Courier New", 21.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label1.Font = new System.Drawing.Font("Courier New", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label1.Location = new System.Drawing.Point(0, 0);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(806, 46);
