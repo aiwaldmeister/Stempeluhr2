@@ -30,11 +30,11 @@
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
-            System.Windows.Forms.ListViewItem listViewItem1 = new System.Windows.Forms.ListViewItem("123456 00:00", 0);
-            System.Windows.Forms.ListViewItem listViewItem2 = new System.Windows.Forms.ListViewItem("123456 00:00", 1);
-            System.Windows.Forms.ListViewItem listViewItem3 = new System.Windows.Forms.ListViewItem("123456 00:00", 0);
-            System.Windows.Forms.ListViewItem listViewItem4 = new System.Windows.Forms.ListViewItem("123456 00:00", 1);
-            System.Windows.Forms.ListViewItem listViewItem5 = new System.Windows.Forms.ListViewItem("123456 00:00", 2);
+            System.Windows.Forms.ListViewItem listViewItem6 = new System.Windows.Forms.ListViewItem("123456 00:00", 0);
+            System.Windows.Forms.ListViewItem listViewItem7 = new System.Windows.Forms.ListViewItem("123456 00:00", 1);
+            System.Windows.Forms.ListViewItem listViewItem8 = new System.Windows.Forms.ListViewItem("123456 00:00", 0);
+            System.Windows.Forms.ListViewItem listViewItem9 = new System.Windows.Forms.ListViewItem("123456 00:00", 1);
+            System.Windows.Forms.ListViewItem listViewItem10 = new System.Windows.Forms.ListViewItem("123456 00:00", 2);
             this.Zeitanzeige = new System.Windows.Forms.Label();
             this.MessageLabel = new System.Windows.Forms.Label();
             this.countdowntimer = new System.Windows.Forms.Timer(this.components);
@@ -126,8 +126,9 @@
             this.Anzeige.Dock = System.Windows.Forms.DockStyle.Fill;
             this.Anzeige.Font = new System.Drawing.Font("Courier New", 21.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Anzeige.Location = new System.Drawing.Point(3, 3);
+            this.Anzeige.Margin = new System.Windows.Forms.Padding(0);
             this.Anzeige.Name = "Anzeige";
-            this.Anzeige.Size = new System.Drawing.Size(1266, 595);
+            this.Anzeige.Size = new System.Drawing.Size(1266, 585);
             this.Anzeige.TabIndex = 4;
             this.Anzeige.Text = "Anzeige";
             this.Anzeige.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -153,15 +154,16 @@
             // 
             // Stempelliste
             // 
-            this.Stempelliste.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.Stempelliste.BackColor = System.Drawing.Color.White;
+            this.Stempelliste.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.Stempelliste.Dock = System.Windows.Forms.DockStyle.Fill;
             this.Stempelliste.Font = new System.Drawing.Font("Courier New", 27.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Stempelliste.Items.AddRange(new System.Windows.Forms.ListViewItem[] {
-            listViewItem1,
-            listViewItem2,
-            listViewItem3,
-            listViewItem4,
-            listViewItem5});
+            listViewItem6,
+            listViewItem7,
+            listViewItem8,
+            listViewItem9,
+            listViewItem10});
             this.Stempelliste.Location = new System.Drawing.Point(0, 0);
             this.Stempelliste.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
             this.Stempelliste.Name = "Stempelliste";
@@ -174,11 +176,10 @@
             // Detailanzeige
             // 
             this.Detailanzeige.BackColor = System.Drawing.SystemColors.Window;
-            this.Detailanzeige.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.Detailanzeige.Dock = System.Windows.Forms.DockStyle.Fill;
             this.Detailanzeige.Font = new System.Drawing.Font("Courier New", 27.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Detailanzeige.Location = new System.Drawing.Point(0, 0);
-            this.Detailanzeige.Margin = new System.Windows.Forms.Padding(3, 0, 0, 0);
+            this.Detailanzeige.Margin = new System.Windows.Forms.Padding(0);
             this.Detailanzeige.Name = "Detailanzeige";
             this.Detailanzeige.Size = new System.Drawing.Size(456, 585);
             this.Detailanzeige.TabIndex = 6;
@@ -205,17 +206,18 @@
             // 
             // tabPage1
             // 
+            this.tabPage1.BackColor = System.Drawing.Color.White;
             this.tabPage1.Controls.Add(this.Anzeige);
             this.tabPage1.Location = new System.Drawing.Point(4, 5);
             this.tabPage1.Name = "tabPage1";
             this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage1.Size = new System.Drawing.Size(1272, 601);
+            this.tabPage1.Size = new System.Drawing.Size(1272, 591);
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "tabPage1";
-            this.tabPage1.UseVisualStyleBackColor = true;
             // 
             // tabPage2
             // 
+            this.tabPage2.BackColor = System.Drawing.Color.White;
             this.tabPage2.Controls.Add(this.splitContainer1);
             this.tabPage2.Location = new System.Drawing.Point(4, 5);
             this.tabPage2.Margin = new System.Windows.Forms.Padding(0);
@@ -224,7 +226,6 @@
             this.tabPage2.Size = new System.Drawing.Size(1272, 591);
             this.tabPage2.TabIndex = 1;
             this.tabPage2.Text = "tabPage2";
-            this.tabPage2.UseVisualStyleBackColor = true;
             // 
             // splitContainer1
             // 
@@ -254,6 +255,7 @@
             // 
             // splitContainer2.Panel1
             // 
+            this.splitContainer2.Panel1.BackColor = System.Drawing.Color.White;
             this.splitContainer2.Panel1.Controls.Add(this.label1);
             this.splitContainer2.Panel1.RightToLeft = System.Windows.Forms.RightToLeft.No;
             // 
@@ -268,7 +270,6 @@
             // label1
             // 
             this.label1.BackColor = System.Drawing.Color.White;
-            this.label1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.label1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.label1.Font = new System.Drawing.Font("Courier New", 21.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label1.Location = new System.Drawing.Point(0, 0);
