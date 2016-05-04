@@ -45,6 +45,8 @@ namespace Stempeluhr2
         MySql.Data.MySqlClient.MySqlCommand comm = new MySql.Data.MySqlClient.MySqlCommand();
         System.Media.SoundPlayer Sound = new System.Media.SoundPlayer();
 
+        //TODO Boolwerte in allen selects/updates/inserts von true/false auf 0/1 umstellen
+        //TODO Alle verwendungen von Boolwerten aus der datenbank von true/false auf 0/1 umstellen
         
 
         string logfilename_global;
@@ -782,6 +784,8 @@ namespace Stempeluhr2
                     {   //letzte stempelung ist keine abstempelung -> nötige daten ermitteln und abstempeln
                         log("Letzter Auftrag (" + letztestempelung_auftrag + ") am " + letztestempelung_tag + "." + letztestempelung_monat + "." + letztestempelung_jahr + " wurde nicht abgestempelt...");
 
+                        //TODO die auto-abstempelung auf eine sekunde später setzen, damit beim auswerten die reihenfolge der stempelungen passt (gerechnet wird mit dem sekundenwert eh nirgends)
+
                         open_db();
                         comm.CommandText = "INSERT INTO stamps (userid,task,art,jahr,monat,tag,stunde,minute,sekunde,dezimal,quelle,storniert) " +
                                            "VALUES ('" + usercode + "','" + letztestempelung_auftrag + "','ab','" + letztestempelung_jahr + "','" +
@@ -904,6 +908,8 @@ namespace Stempeluhr2
 
                     Pausenzeit_tmp = Pausenzeit_tmp + ab_uhrzeit_dezimal - an_uhrzeit_dezimal;
                 }
+
+                //TODO Leerlaufstempelungen Mittags auch nicht zählen
 
                 if(an_task != "888000")
                 {   //keine Leerlaufstempelung -> Zeit komplett auf Istzeit anrechnen
