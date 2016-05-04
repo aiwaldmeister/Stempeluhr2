@@ -517,14 +517,14 @@ namespace Stempeluhr2
                 resturlaub = "30";
                 planurlaub = "0";
 
-                //Datumsangaben von yyyyMMdd in lesbareres Format bringen
+                
                 if(zeitkonto_berechnungsstand.Length == 8)
-                {
+                {   //Datumsangabe von yyyyMMdd in besser lesbarers Format bringen
                     zeitkonto_berechnungsstand = DateTime.ParseExact(zeitkonto_berechnungsstand, "yyyyMMdd", null).ToLongDateString();
 
                 }
                 if(bonuskonto_ausgezahlt_bis.Length == 8)
-                {
+                {   //Datumsangabe von yyyyMMdd in besser lesbares Format bringen
                     bonuskonto_ausgezahlt_bis = DateTime.ParseExact(bonuskonto_ausgezahlt_bis, "yyyyMMdd", null).ToLongDateString();
 
                 }else if(bonuskonto_ausgezahlt_bis == "")
@@ -557,7 +557,7 @@ namespace Stempeluhr2
                     string dbstunde = Reader["stunde"] + "";
                     string dbminute = Reader["minute"] + "";
                     string dbart = Reader["art"] + "";
-                    bool dbstorniert = bool.Parse(Reader["storniert"] + "");
+                    int dbstorniert = int.Parse(Reader["storniert"] + "");
 
                     string[] row = {dbtask + " " + dbstunde + ":" + dbminute};
                     var listViewItem = new ListViewItem(row);
@@ -568,7 +568,8 @@ namespace Stempeluhr2
                     {
                         listViewItem.ImageIndex = 1;
                     }
-                    if (dbstorniert)
+
+                    if (dbstorniert == 1)
                     {
                         listViewItem.ImageIndex = 2;
                     }
@@ -633,7 +634,7 @@ namespace Stempeluhr2
                 activeuser_global = usercode;
                 activetask_global = currenttask;
 
-                comm.CommandText = "SELECT count(*) FROM stamps WHERE userid='" + usercode + "' AND quelle='wartung' AND storniert = false";
+                comm.CommandText = "SELECT count(*) FROM stamps WHERE userid='" + usercode + "' AND quelle='wartung' AND storniert = 0";
                 log("SQL:" + comm.CommandText);
                 try
                 {
@@ -683,7 +684,7 @@ namespace Stempeluhr2
             int summe_anstempelungen = 0;
             string sumstring = "";
             comm.CommandText = "SELECT ((sum(stunde) * 100)  + sum(dezimal)) FROM stamps WHERE userid = '"
-                            + activeuser_global + "' and task = '" + activetask_global + "' and art='ab' AND storniert = false";
+                            + activeuser_global + "' and task = '" + activetask_global + "' and art='ab' AND storniert = 0";
             log("SQL:" + comm.CommandText);
             try
             {
@@ -702,7 +703,7 @@ namespace Stempeluhr2
             }
 
             comm.CommandText = "SELECT ((sum(stunde) * 100)  + sum(dezimal)) FROM stamps WHERE userid = '"
-                            + activeuser_global + "' and task = '" + activetask_global + "' and art='an' AND storniert = false";
+                            + activeuser_global + "' and task = '" + activetask_global + "' and art='an' AND storniert = 0";
             log("SQL:" + comm.CommandText);
             try
             {
@@ -764,10 +765,11 @@ namespace Stempeluhr2
 
                     //den letzen gestempelten tag sauber schliessen
                     open_db();
-                    comm.CommandText = "select * from stamps where userid = '" + usercode + "' AND storniert = false order by jahr DESC, monat desc, tag DESC, stunde desc, minute desc, sekunde desc, art desc limit 1";
+                    comm.CommandText = "select * from stamps where userid = '" + usercode + "' AND storniert = 0 order by jahr DESC, monat desc, tag DESC, stunde desc, minute desc, sekunde desc, art desc limit 1";
                     log("SQL:" + comm.CommandText);
                     Reader = comm.ExecuteReader();
                     Reader.Read();
+
                     string letztestempelung_art = Reader["art"] + "";
                     string letztestempelung_auftrag = Reader["task"] + "";
                     string letztestempelung_jahr = Reader["jahr"] + "";
@@ -780,17 +782,20 @@ namespace Stempeluhr2
                     Reader.Close();
                     close_db();
 
+                    //TODO Den Fall abfangen dass es noch garkeine Stempelungen gibt  (und folglich auch keine letzte)
+
                     if (letztestempelung_art != "ab")
                     {   //letzte stempelung ist keine abstempelung -> nötige daten ermitteln und abstempeln
                         log("Letzter Auftrag (" + letztestempelung_auftrag + ") am " + letztestempelung_tag + "." + letztestempelung_monat + "." + letztestempelung_jahr + " wurde nicht abgestempelt...");
 
                         //TODO die auto-abstempelung auf eine sekunde später setzen, damit beim auswerten die reihenfolge der stempelungen passt (gerechnet wird mit dem sekundenwert eh nirgends)
+                        letztestempelung_sekunde = int.Parse
 
                         open_db();
                         comm.CommandText = "INSERT INTO stamps (userid,task,art,jahr,monat,tag,stunde,minute,sekunde,dezimal,quelle,storniert) " +
                                            "VALUES ('" + usercode + "','" + letztestempelung_auftrag + "','ab','" + letztestempelung_jahr + "','" +
                                            letztestempelung_monat + "','" + letztestempelung_tag + "','" + letztestempelung_stunde + "','" +
-                                           letztestempelung_minute + "','" + letztestempelung_sekunde + "','" + letztestempelung_zeiteinheit + "','wartung',false)";
+                                           letztestempelung_minute + "','" + letztestempelung_sekunde + "','" + letztestempelung_zeiteinheit + "','wartung',0)";
                         log("SQL:" + comm.CommandText);
                         try
                         {
@@ -815,8 +820,8 @@ namespace Stempeluhr2
                         double zeitkontostand_bisher = 0;
                         double zeitkontostand_neu = 0;
 
-                        if(berechneteIstZeit == -1 || berechneteSollZeit == -1) //Fehler bei der Berechnung
-                        {
+                        if(berechneteIstZeit == -1 || berechneteSollZeit == -1) 
+                        {//Fehler bei der Berechnung
                             fehlerflag = true;
                             log("Fehler bei der Zeitberechnung -> Stundenkonto wird nicht aktualisiert");
                             open_db();
@@ -876,7 +881,7 @@ namespace Stempeluhr2
 
             open_db();
             comm.CommandText = "SELECT * FROM stamps WHERE userid = '" + usercode + "' AND jahr = '" + berechnungsjahr + 
-                                "' AND monat = '" + berechnungsmonat + "' AND tag = '" + berechnungstag + "'  AND storniert = false " +
+                                "' AND monat = '" + berechnungsmonat + "' AND tag = '" + berechnungstag + "'  AND storniert = 0 " +
                                 " ORDER BY jahr ASC, monat ASC, tag ASC, stunde ASC, minute ASC, sekunde ASC, art ASC";
             log("SQL:" + comm.CommandText);
             MySql.Data.MySqlClient.MySqlDataReader Reader = comm.ExecuteReader();
@@ -909,33 +914,117 @@ namespace Stempeluhr2
                     Pausenzeit_tmp = Pausenzeit_tmp + ab_uhrzeit_dezimal - an_uhrzeit_dezimal;
                 }
 
-                //TODO Leerlaufstempelungen Mittags auch nicht zählen
+                
 
                 if(an_task != "888000")
                 {   //keine Leerlaufstempelung -> Zeit komplett auf Istzeit anrechnen
                     Istzeit_tmp = Istzeit_tmp + ab_uhrzeit_dezimal - an_uhrzeit_dezimal;
                 }
                 else
-                {   //Leerlaufstempelung
-                    if(an_uhrzeit_dezimal < 8)
-                    {//vor 8 Uhr angestempelt
-                        if(ab_uhrzeit_dezimal < 8)
-                        {//Leerlaufstempelung komplett vor 8 Uhr -> nicht auf Istzeit anrechnen
+                {   
+                //////Leerlaufstempelung -> ///////////start der Fallunterscheidung ////////////////
+                    
+                    //TODO Stefan fragen ob Leerlaufzeiten die zwischen 12:30 und 13:30 abgezogen werden, auf die Pausenzeit angerechnet werden sollen
+                    
+                    //Fall 1: Anstempelung vor 8, Abstempelung vor 8 -> nix anrechnen
+                    if(an_uhrzeit_dezimal <= 8 && ab_uhrzeit_dezimal <= 8)
+                    {   
+                    }else
 
-                        }else
-                        {//Leerlaufstempelung teilweise vor 8 Uhr -> erst ab 8 Uhr auf Istzeit anrechnen
-                            Istzeit_tmp = Istzeit_tmp + ab_uhrzeit_dezimal - 8;
-                        }
-                    }else if(ab_uhrzeit_dezimal > 17.5)
-                    {//nach 17:30 abgestempelt
-                        if(an_uhrzeit_dezimal > 17.5)
-                        {//Leerlaufstempelung komplett nach 17:30 -> nicht auf Istzeit anrechnen
+                    //Fall 2: Anstempelung vor 8, Abstempelung Vormittags -> 8 bis Abstempelung anrechnen
+                    if(an_uhrzeit_dezimal <= 8 && ab_uhrzeit_dezimal >= 8 &&ab_uhrzeit_dezimal <= 12.5)
+                    {
+                        Istzeit_tmp = Istzeit_tmp + ab_uhrzeit_dezimal - 8;
+                    }else
 
-                        }else
-                        {//Leerlaufstempelung teilweise nach 17:30 -> nur bis 17:30 auf Istzeit anrechnen
-                            Istzeit_tmp = Istzeit_tmp + 17.5 - an_uhrzeit_dezimal;
-                        }
+                    //Fall 3: Anstempelung vor 8, Abstempelung Mittags -> 8 bis 12:30 anrechnen
+                    if (an_uhrzeit_dezimal <= 8 && ab_uhrzeit_dezimal >= 12.5 && ab_uhrzeit_dezimal <= 13.5)
+                    {
+                        Istzeit_tmp = Istzeit_tmp + 12.5 - 8;
                     }
+                    else
+
+                    //Fall 4: Anstempelung vor 8, Abstempelung Nachmittags -> 8 bis Abstempelung anrechnen und 1 Std abziehen
+                    if (an_uhrzeit_dezimal <= 8 && ab_uhrzeit_dezimal >= 13.5 && ab_uhrzeit_dezimal <= 17.5)
+                    {
+                        Istzeit_tmp = Istzeit_tmp + ab_uhrzeit_dezimal - 8 - 1;
+                    }
+                    else
+
+                    //Fall 5: Anstempelung vor 8, Abstempelung nach 17:30 -> 8 bis 17:30 anrechnen und 1 Std abziehen
+                    if (an_uhrzeit_dezimal <= 8 && ab_uhrzeit_dezimal >= 17.5)
+                    {
+                        Istzeit_tmp = Istzeit_tmp + 17.5 - 8 - 1;
+                    }
+                    else
+
+                    //Fall 6: Anstempelung Vormittags, Abstempelung Vormittags -> Anstempelung bis Abstempelung voll anrechnen
+                    if (an_uhrzeit_dezimal >= 8 && an_uhrzeit_dezimal <= 12.5 && ab_uhrzeit_dezimal >= 8 && ab_uhrzeit_dezimal <= 12.5)
+                    {
+                        Istzeit_tmp = Istzeit_tmp + ab_uhrzeit_dezimal - an_uhrzeit_dezimal;
+                    }
+                    else
+
+                    //Fall 7: Anstempelung Vormittags, Abstempelung Mittags -> Anstempelung bis 12:30 anrechnen
+                    if (an_uhrzeit_dezimal >= 8 && an_uhrzeit_dezimal <= 12.5 && ab_uhrzeit_dezimal >= 12.5 && ab_uhrzeit_dezimal <= 13.5)
+                    {
+                        Istzeit_tmp = Istzeit_tmp + 12.5 - an_uhrzeit_dezimal;
+                    }
+                    else
+
+                    //Fall 8: Anstempelung Vormittags, Abstempelung Nachmittags -> Anstempelung bis Abstempelung anrechnen und 1 Std abziehen
+                    if (an_uhrzeit_dezimal >= 8 && an_uhrzeit_dezimal <= 12.5 && ab_uhrzeit_dezimal >= 13.5 && ab_uhrzeit_dezimal <= 17.5)
+                    {
+                        Istzeit_tmp = Istzeit_tmp + ab_uhrzeit_dezimal - an_uhrzeit_dezimal - 1;
+                    }
+                    else
+
+                    //Fall 9: Anstempelung Vormittags, Abstempelung nach 17:30 -> Anstempelung bis 17:30 anrechnen und 1 Std abziehen
+                    if (an_uhrzeit_dezimal >= 8 && an_uhrzeit_dezimal <= 12.5 && ab_uhrzeit_dezimal >= 17.5)
+                    {
+                        Istzeit_tmp = Istzeit_tmp + 17.5 - an_uhrzeit_dezimal -1;
+                    }
+                    else
+
+                    //Fall 10: Anstempelung Mittags, Abstempelung Mittags -> nix anrechnen
+                    if (an_uhrzeit_dezimal >= 12.5 && an_uhrzeit_dezimal <= 13.5 && ab_uhrzeit_dezimal >= 12.5 && ab_uhrzeit_dezimal <= 13.5)
+                    {   }
+                    else
+
+                    //Fall 11: Anstempelung Mittags, Abstempelung Nachmittags -> 13:30 bis Abstempelung anrechnen
+                    if (an_uhrzeit_dezimal >= 12.5 && an_uhrzeit_dezimal <= 13.5 && ab_uhrzeit_dezimal >= 13.5 && ab_uhrzeit_dezimal <= 17.5)
+                    {
+                        Istzeit_tmp = Istzeit_tmp + ab_uhrzeit_dezimal - 13.5;
+                    }
+                    else
+
+                    //Fall 12: Anstempelung Mittags, Abstempelung nach 17:30 -> 13:30 bis 17:30 anrechnen
+                    if (an_uhrzeit_dezimal >= 12.5 && an_uhrzeit_dezimal <= 13.5 && ab_uhrzeit_dezimal >= 17.5)
+                    {
+                        Istzeit_tmp = Istzeit_tmp + 17.5 - 13.5;
+                    }
+                    else
+
+                    //Fall 13: Anstempelung Nachmittags, Abstempelung Nachmittags -> Anstempelung bis Abstempelung voll anrechnen
+                    if (an_uhrzeit_dezimal >= 13.5 && an_uhrzeit_dezimal <= 17.5 && ab_uhrzeit_dezimal >= 13.5 && ab_uhrzeit_dezimal <= 17.5)
+                    {
+                        Istzeit_tmp = Istzeit_tmp + ab_uhrzeit_dezimal - an_uhrzeit_dezimal;
+                    }
+                    else
+
+                    //Fall 14: Anstempelung Nachmittags, Abstempelung nach 17:30 -> Anstempelung bis 17:30 anrechnen
+                    if (an_uhrzeit_dezimal >= 13.5 && an_uhrzeit_dezimal <= 17.5 && ab_uhrzeit_dezimal >= 17.5)
+                    {
+                        Istzeit_tmp = Istzeit_tmp + 17.5 - an_uhrzeit_dezimal;
+                    }
+                    else
+
+                    //Fall 15: Anstempelung nach 17:30, Abstempelung nach 17:30 -> nix anrechnen
+                    if (an_uhrzeit_dezimal >= 17.5 && ab_uhrzeit_dezimal >= 17.5)
+                    {   }
+
+                ///////// Ende der Fallunterscheidungen bei Leerlaufstempelungen
+                    
                 }
             }
             Reader.Close();
@@ -950,8 +1039,7 @@ namespace Stempeluhr2
             {
                 Istzeit_tmp = Istzeit_tmp - (0.5 - Pausenzeit_tmp);
             }
-            //TODO Mindestpausenzeit mit Stefan absprechen und ggf. nochmal anpassen.
-            
+                        
             if(Fehler == "")
             {
                 return Istzeit_tmp;
@@ -969,7 +1057,7 @@ namespace Stempeluhr2
             string sollzeitquelle = "";
             open_db();
             comm.CommandText = "SELECT sollzeit FROM kalender where zuordnung='" + usercode + "' AND jahr = '" + berechnungsjahr + 
-                                "' AND monat = '" + berechnungsmonat+ "' AND tag = '" + berechnungstag + "' AND storniert = false";
+                                "' AND monat = '" + berechnungsmonat+ "' AND tag = '" + berechnungstag + "' AND storniert = 0";
             log("SQL:" + comm.CommandText);
             try
             {
@@ -986,7 +1074,7 @@ namespace Stempeluhr2
             {   //es gab keinen persönlichen Kalendereintrag -> suche allgemeinen
                 open_db();
                 comm.CommandText = "SELECT sollzeit FROM kalender where zuordnung='allgemein' AND jahr = '" + berechnungsjahr + 
-                                "' AND monat = '" + berechnungsmonat+ "' AND tag = '" + berechnungstag + "' AND storniert = false";
+                                "' AND monat = '" + berechnungsmonat+ "' AND tag = '" + berechnungstag + "' AND storniert = 0";
                 log("SQL:" + comm.CommandText);
                 try
                 {
