@@ -46,7 +46,8 @@ namespace Stempeluhr2
         System.Media.SoundPlayer Sound = new System.Media.SoundPlayer();
 
         //TODO Boolwerte in allen selects/updates/inserts von true/false auf 0/1 umstellen
-        //TODO Alle verwendungen von Boolwerten aus der datenbank von true/false auf 0/1 umstellen
+        //TODO Alle verwendungen von Boolwerten aus der datenbank von true/false auf 0/1 umstellen -> nein doch nicht, stattdessen auf (bool) casten
+
         
 
         string logfilename_global;
@@ -244,7 +245,7 @@ namespace Stempeluhr2
                 }
                 if (userwarnung_global != "")
                 {
-                    Anzeige.Text = Anzeige.Text + "\r\n\r\n" + userwarnung_global;
+                    Anzeige.Text = Anzeige.Text + "\r\n\r\n\r\n" + userwarnung_global;
                 }
                 status_global = "eingeloggt";
                 message(statusmeldung, Color.LightSkyBlue);
@@ -595,7 +596,7 @@ namespace Stempeluhr2
 
             string username = "";
             string currenttask = "";
-            int stempelfehler = 0;
+            bool stempelfehler = false;
             int autostempelungen = 0;
 
             //prüfen ob person angelegt ist
@@ -626,7 +627,7 @@ namespace Stempeluhr2
                     Reader.Read();
                     username = Reader["vorname"] + " " +  Reader["name"] + "";
                     currenttask = Reader["currenttask"] + "";
-                    stempelfehler = int.Parse(Reader["stempelfehler"] + "");
+                    stempelfehler = (bool)Reader["stempelfehler"];
                     Reader.Close();
                 }
                 catch (Exception ex) { log(ex.Message); }
@@ -647,7 +648,7 @@ namespace Stempeluhr2
                     userwarnung_global = "Unkorrigierte automatische Abstempelungen vorhanden!";
                 }
                 
-                if(stempelfehler == 1)
+                if(stempelfehler == true)
                 {
                     if(userwarnung_global != "") userwarnung_global = userwarnung_global + "\r\n";
                     userwarnung_global = userwarnung_global + "Fehlerhafte Stempelungen -> Zeitberechnung nicht möglich!";
@@ -755,7 +756,6 @@ namespace Stempeluhr2
                 close_db();
                 DateTime datummituhrzeit_gestern = DateTime.Now.AddDays(-1);
                 DateTime datum_gestern = new DateTime(datummituhrzeit_gestern.Year,datummituhrzeit_gestern.Month,datummituhrzeit_gestern.Day);
-                //TODO testen ob Uhrzeit von datum_gestern auf 00:00 Uhr steht, damit der Vergleich mit dem datum der letzten Berechnung funktioniert
                 
                 DateTime datum_letzte_zeitberechnung = DateTime.ParseExact(berechnungsstand_string, "yyyyMMdd", null);
 
@@ -789,7 +789,10 @@ namespace Stempeluhr2
                         log("Letzter Auftrag (" + letztestempelung_auftrag + ") am " + letztestempelung_tag + "." + letztestempelung_monat + "." + letztestempelung_jahr + " wurde nicht abgestempelt...");
 
                         //TODO die auto-abstempelung auf eine sekunde später setzen, damit beim auswerten die reihenfolge der stempelungen passt (gerechnet wird mit dem sekundenwert eh nirgends)
-                        letztestempelung_sekunde = int.Parse
+                        int tmp = int.Parse(letztestempelung_sekunde);
+                        tmp = tmp + 1;
+                        letztestempelung_sekunde = tmp.ToString("D2");
+                            
 
                         open_db();
                         comm.CommandText = "INSERT INTO stamps (userid,task,art,jahr,monat,tag,stunde,minute,sekunde,dezimal,quelle,storniert) " +
@@ -1030,12 +1033,9 @@ namespace Stempeluhr2
             Reader.Close();
             close_db();
             Istzeit_tmp = Istzeit_tmp - Pausenzeit_tmp;
-                
+
             //Pausenzeit auf mindestlänge bringen
-            if(Istzeit_tmp >= 6 && Pausenzeit_tmp < 0.75)
-            {
-                Istzeit_tmp = Istzeit_tmp - (0.75 - Pausenzeit_tmp);
-            }else if(Pausenzeit_tmp < 0.5)
+            if (Istzeit_tmp >= 6 && Pausenzeit_tmp < 0.5)
             {
                 Istzeit_tmp = Istzeit_tmp - (0.5 - Pausenzeit_tmp);
             }
