@@ -47,6 +47,8 @@ namespace Stempeluhr2
 
         //TODO Boolwerte in allen selects/updates/inserts von true/false auf 0/1 umstellen
         //TODO Alle verwendungen von Boolwerten aus der datenbank von true/false auf 0/1 umstellen -> nein doch nicht, stattdessen auf (bool) casten
+        //TODO Alle SQL-Querys auf parametrisierte querys umstellen
+        //TODO Das SQL-Commando local jeweils deklarieren statt einmal global...
 
         
 
@@ -489,12 +491,14 @@ namespace Stempeluhr2
         {
             string name = "";
             string zeitkonto = "";
-            string zeitkonto_berechnungsstand = "";
-            string resturlaub = "";
+            DateTime zeitkonto_berechnungsstand;
+            double resturlaub = 0;
+            double jahresuhrlaub = 0;
             string bonuszeit_gesternabend = "";
-            string bonuskonto_ausgezahlt_bis = "";
+            DateTime bonuskonto_ausgezahlt_bis;
+
             string bonuszeit_bei_letzter_auszahlung = "";
-            string planurlaub = "";
+            double planurlaub = 0;
 
             try
             {
@@ -507,39 +511,46 @@ namespace Stempeluhr2
                 Reader.Read();
                 name = Reader["vorname"] + " " + Reader["name"] + "";
                 zeitkonto = Reader["zeitkonto"] + "";
-                zeitkonto_berechnungsstand = Reader["zeitkonto_berechnungsstand"] + "";
-                bonuskonto_ausgezahlt_bis = Reader["bonuskonto_ausgezahlt_bis"] + "";
+                zeitkonto_berechnungsstand = DateTime.ParseExact(Reader["zeitkonto_berechnungsstand"] + "", "yyyyMMdd", null);
+                bonuskonto_ausgezahlt_bis = DateTime.ParseExact(Reader["bonuskonto_ausgezahlt_bis"] + "", "yyyyMMdd", null);
                 bonuszeit_bei_letzter_auszahlung = Reader["bonuszeit_bei_letzter_auszahlung"] + "";
+                jahresuhrlaub = (double)Reader["jahresurlaub"];
                 Reader.Close();
                 close_db();
 
-                //TODO Bonuszeit, Urlaub, Resturlaub on the fly berechnen
-                bonuszeit_gesternabend = "0,00";
-                resturlaub = "30";
-                planurlaub = "0";
-
+                //TODO Bonuszeit on the fly berechnen
+                DateTime datumgestern = DateTime.ParseExact(jahr_global + monat_global + tag_global, "yyyyMMdd", null).AddDays(-1);
+                bonuszeit_gesternabend = ermittlebonuszeit(activeuser_global,bonuskonto_ausgezahlt_bis.AddDays(1),datumgestern).ToString();
                 
-                if(zeitkonto_berechnungsstand.Length == 8)
-                {   //Datumsangabe von yyyyMMdd in besser lesbarers Format bringen
-                    zeitkonto_berechnungsstand = DateTime.ParseExact(zeitkonto_berechnungsstand, "yyyyMMdd", null).ToLongDateString();
 
-                }
-                if(bonuskonto_ausgezahlt_bis.Length == 8)
-                {   //Datumsangabe von yyyyMMdd in besser lesbares Format bringen
-                    bonuskonto_ausgezahlt_bis = DateTime.ParseExact(bonuskonto_ausgezahlt_bis, "yyyyMMdd", null).ToLongDateString();
-
-                }else if(bonuskonto_ausgezahlt_bis == "")
-                {
-                    bonuskonto_ausgezahlt_bis = "<Bisher keine Auszahlung>";
-                }
+                //Resturlaub ermitteln
+                open_db();
+                comm.CommandText = "SELECT SUM(urlaubstage_abziehen) from kalender WHERE zuordnung in ('" + activeuser_global + "','allgemein') " + 
+                                    "AND jahr = '" + jahr_global + "' " + 
+                                    "AND monat < '" + monat_global + "' " + 
+                                    "OR ( monat = '" + monat_global + "' AND tag <= '" + tag_global +"') "+
+                                    "AND storniert = 0";
+                resturlaub = jahresuhrlaub - (double)comm.ExecuteScalar();
+                close_db();
 
 
+                //bereits geplante Urlaubstage ermitteln
+                open_db();
+                comm.CommandText = "SELECT SUM(urlaubstage_abziehen) from kalender WHERE zuordnung in ('" + activeuser_global + "','allgemein') " +
+                                    "AND jahr = '" + jahr_global + "' " +
+                                    "AND monat > '" + monat_global + "' " +
+                                    "OR ( monat = '" + monat_global + "' AND tag > '" + tag_global + "') " +
+                                    "AND storniert = 0";
+                planurlaub = (double)comm.ExecuteScalar();
+                close_db();
+
+ 
                 Detailanzeige.Text = "Stundenkonto\r\n" + zeitkonto + "\r\n\r\n" +
-                                     "Stand der Stundenberechnung\r\n" + zeitkonto_berechnungsstand + "\r\n\r\n" +
+                                     "Stand der Stundenberechnung\r\n" + zeitkonto_berechnungsstand.ToLongDateString() + "\r\n\r\n" +
                                     "Resturlaub bis Jahresende\r\n" + resturlaub + " Tage\r\n\r\n" +
                                     "Bereits geplanter Urlaub\r\n" + planurlaub + " Tage\r\n\r\n" +
                                     "_________________________\r\n\r\n\r\n" +
-                                    "Bonuszeiten ausgezahlt bis \r\n" + bonuskonto_ausgezahlt_bis + "\r\n\r\n" +
+                                    "Bonuszeiten ausgezahlt bis \r\n" + bonuskonto_ausgezahlt_bis.ToLongDateString() + "\r\n\r\n" +
                                     "Bonus bei der letzten Auszahlung\r\n" + bonuszeit_bei_letzter_auszahlung + " Stunden\r\n\r\n" +
                                     "Bonuszeit (Stand gestern Abend)\r\n" + bonuszeit_gesternabend + " Stunden";
                 
@@ -586,6 +597,39 @@ namespace Stempeluhr2
             
             setstatus("userinfos", "Details zu " + name);
             return true;
+        }
+
+        private double ermittlebonuszeit(string user, DateTime startdatum, DateTime enddatum)
+        {
+            DateTime berechnungsdatum = startdatum;
+            double summe_bonuszeiten = 0;
+
+            while(berechnungsdatum <= enddatum)
+            {   //für jeden tag verrechnete stunden und sollzeit ermitteln
+                double verrechnet_heute = 0;
+                double sollzeit_heute = 0;
+                sollzeit_heute = ermittleSollZeit(user, berechnungsdatum.Year.ToString("D4"), berechnungsdatum.Month.ToString("D2"), berechnungsdatum.Day.ToString("D2"));
+
+                try
+                {
+                    open_db();
+                    comm.CommandText = "SELECT SUM(stunden) FROM verrechnung WHERE " + 
+                                        "person='' AND jahr = '" + berechnungsdatum.Year.ToString("D4") + 
+                                        "' AND monat = '" + berechnungsdatum.Month.ToString("D2") + 
+                                        "' AND TAG = '" + berechnungsdatum.Day.ToString("D2") + "' AND storniert = 0";
+                    verrechnet_heute = (double)comm.ExecuteScalar();
+                    close_db();
+                }
+                catch (Exception ex) { log(ex.Message); }
+                
+
+                summe_bonuszeiten = summe_bonuszeiten + verrechnet_heute - (sollzeit_heute * 0.55);
+
+
+                berechnungsdatum.AddDays(1);
+            }
+
+            return summe_bonuszeiten;
         }
 
         private bool einloggen(string usercode)
@@ -754,8 +798,7 @@ namespace Stempeluhr2
                 }
                 catch (Exception ex) { log("SQL: " + comm.CommandText + " Error: " + ex.Message); }
                 close_db();
-                DateTime datummituhrzeit_gestern = DateTime.Now.AddDays(-1);
-                DateTime datum_gestern = new DateTime(datummituhrzeit_gestern.Year,datummituhrzeit_gestern.Month,datummituhrzeit_gestern.Day);
+                DateTime datum_gestern = DateTime.ParseExact(jahr_global + monat_global + tag_global, "yyyyMMdd", null).AddDays(-1);
                 
                 DateTime datum_letzte_zeitberechnung = DateTime.ParseExact(berechnungsstand_string, "yyyyMMdd", null);
 
@@ -768,7 +811,7 @@ namespace Stempeluhr2
                     comm.CommandText = "select * from stamps where userid = '" + usercode + "' AND storniert = 0 order by jahr DESC, monat desc, tag DESC, stunde desc, minute desc, sekunde desc, art desc limit 1";
                     log("SQL:" + comm.CommandText);
                     Reader = comm.ExecuteReader();
-                    Reader.Read();
+                    bool Satzvorhanden = Reader.Read();
 
                     string letztestempelung_art = Reader["art"] + "";
                     string letztestempelung_auftrag = Reader["task"] + "";
@@ -782,17 +825,17 @@ namespace Stempeluhr2
                     Reader.Close();
                     close_db();
 
-                    //TODO Den Fall abfangen dass es noch garkeine Stempelungen gibt  (und folglich auch keine letzte)
-
-                    if (letztestempelung_art != "ab")
+                    
+                    //Falls es Stempelungen gibt, aber die letzte keine Abstempelung ist (abstempeln wurde vergessen)
+                    if (Satzvorhanden == true && letztestempelung_art != "ab")
                     {   //letzte stempelung ist keine abstempelung -> nötige daten ermitteln und abstempeln
                         log("Letzter Auftrag (" + letztestempelung_auftrag + ") am " + letztestempelung_tag + "." + letztestempelung_monat + "." + letztestempelung_jahr + " wurde nicht abgestempelt...");
 
-                        //TODO die auto-abstempelung auf eine sekunde später setzen, damit beim auswerten die reihenfolge der stempelungen passt (gerechnet wird mit dem sekundenwert eh nirgends)
+                        //die auto-abstempelung auf eine sekunde später setzen, damit beim auswerten die reihenfolge der stempelungen passt 
+                        //verfälscht keine berechnungen (gerechnet wird mit dem sekundenwert eh nirgends)
                         int tmp = int.Parse(letztestempelung_sekunde);
                         tmp = tmp + 1;
                         letztestempelung_sekunde = tmp.ToString("D2");
-                            
 
                         open_db();
                         comm.CommandText = "INSERT INTO stamps (userid,task,art,jahr,monat,tag,stunde,minute,sekunde,dezimal,quelle,storniert) " +
@@ -926,9 +969,8 @@ namespace Stempeluhr2
                 else
                 {   
                 //////Leerlaufstempelung -> ///////////start der Fallunterscheidung ////////////////
-                    
-                    //TODO Stefan fragen ob Leerlaufzeiten die zwischen 12:30 und 13:30 abgezogen werden, auf die Pausenzeit angerechnet werden sollen
-                    
+                //Leerlaufzeiten zwischen 12:30-13:30 die nicht zur IstZeit angerechnet werden, werden dafür auf die Pausenzeit angerechnet
+
                     //Fall 1: Anstempelung vor 8, Abstempelung vor 8 -> nix anrechnen
                     if(an_uhrzeit_dezimal <= 8 && ab_uhrzeit_dezimal <= 8)
                     {   
@@ -944,6 +986,7 @@ namespace Stempeluhr2
                     if (an_uhrzeit_dezimal <= 8 && ab_uhrzeit_dezimal >= 12.5 && ab_uhrzeit_dezimal <= 13.5)
                     {
                         Istzeit_tmp = Istzeit_tmp + 12.5 - 8;
+                        Pausenzeit_tmp = Pausenzeit_tmp + ab_uhrzeit_dezimal - 12.5;
                     }
                     else
 
@@ -951,6 +994,7 @@ namespace Stempeluhr2
                     if (an_uhrzeit_dezimal <= 8 && ab_uhrzeit_dezimal >= 13.5 && ab_uhrzeit_dezimal <= 17.5)
                     {
                         Istzeit_tmp = Istzeit_tmp + ab_uhrzeit_dezimal - 8 - 1;
+                        Pausenzeit_tmp = Pausenzeit_tmp + 1;
                     }
                     else
 
@@ -958,6 +1002,7 @@ namespace Stempeluhr2
                     if (an_uhrzeit_dezimal <= 8 && ab_uhrzeit_dezimal >= 17.5)
                     {
                         Istzeit_tmp = Istzeit_tmp + 17.5 - 8 - 1;
+                        Pausenzeit_tmp = Pausenzeit_tmp + 1;
                     }
                     else
 
@@ -972,6 +1017,7 @@ namespace Stempeluhr2
                     if (an_uhrzeit_dezimal >= 8 && an_uhrzeit_dezimal <= 12.5 && ab_uhrzeit_dezimal >= 12.5 && ab_uhrzeit_dezimal <= 13.5)
                     {
                         Istzeit_tmp = Istzeit_tmp + 12.5 - an_uhrzeit_dezimal;
+                        Pausenzeit_tmp = Pausenzeit_tmp + ab_uhrzeit_dezimal - 12.5;
                     }
                     else
 
@@ -979,6 +1025,7 @@ namespace Stempeluhr2
                     if (an_uhrzeit_dezimal >= 8 && an_uhrzeit_dezimal <= 12.5 && ab_uhrzeit_dezimal >= 13.5 && ab_uhrzeit_dezimal <= 17.5)
                     {
                         Istzeit_tmp = Istzeit_tmp + ab_uhrzeit_dezimal - an_uhrzeit_dezimal - 1;
+                        Pausenzeit_tmp = Pausenzeit_tmp + 1;
                     }
                     else
 
@@ -986,18 +1033,22 @@ namespace Stempeluhr2
                     if (an_uhrzeit_dezimal >= 8 && an_uhrzeit_dezimal <= 12.5 && ab_uhrzeit_dezimal >= 17.5)
                     {
                         Istzeit_tmp = Istzeit_tmp + 17.5 - an_uhrzeit_dezimal -1;
+                        Pausenzeit_tmp = Pausenzeit_tmp + 1;
                     }
                     else
 
                     //Fall 10: Anstempelung Mittags, Abstempelung Mittags -> nix anrechnen
                     if (an_uhrzeit_dezimal >= 12.5 && an_uhrzeit_dezimal <= 13.5 && ab_uhrzeit_dezimal >= 12.5 && ab_uhrzeit_dezimal <= 13.5)
-                    {   }
+                    {
+                        Pausenzeit_tmp = Pausenzeit_tmp + ab_uhrzeit_dezimal - an_uhrzeit_dezimal;
+                    }
                     else
 
                     //Fall 11: Anstempelung Mittags, Abstempelung Nachmittags -> 13:30 bis Abstempelung anrechnen
                     if (an_uhrzeit_dezimal >= 12.5 && an_uhrzeit_dezimal <= 13.5 && ab_uhrzeit_dezimal >= 13.5 && ab_uhrzeit_dezimal <= 17.5)
                     {
                         Istzeit_tmp = Istzeit_tmp + ab_uhrzeit_dezimal - 13.5;
+                        Pausenzeit_tmp = Pausenzeit_tmp + 13.5 - an_uhrzeit_dezimal;
                     }
                     else
 
@@ -1005,6 +1056,7 @@ namespace Stempeluhr2
                     if (an_uhrzeit_dezimal >= 12.5 && an_uhrzeit_dezimal <= 13.5 && ab_uhrzeit_dezimal >= 17.5)
                     {
                         Istzeit_tmp = Istzeit_tmp + 17.5 - 13.5;
+                        Pausenzeit_tmp = Pausenzeit_tmp + 13.5 - an_uhrzeit_dezimal;
                     }
                     else
 
@@ -1034,7 +1086,7 @@ namespace Stempeluhr2
             close_db();
             Istzeit_tmp = Istzeit_tmp - Pausenzeit_tmp;
 
-            //Pausenzeit auf mindestlänge bringen
+            //Pausenzeit auf mindestlänge bringen (laut Gesetz mindestens 30min bei mehr als 6Std Arbeit)
             if (Istzeit_tmp >= 6 && Pausenzeit_tmp < 0.5)
             {
                 Istzeit_tmp = Istzeit_tmp - (0.5 - Pausenzeit_tmp);
