@@ -125,7 +125,7 @@ namespace Stempeluhr2
             {
                 conn.Open();
                 comm.Connection = conn;
-                log("Datenbankverbindung geoeffnet. (" + conn.ToString() + ")");
+                //log("Datenbankverbindung geoeffnet. (" + conn.ToString() + ")"); //nur zu debugzwecken
                 return true;
             }
             catch (MySql.Data.MySqlClient.MySqlException ex)
@@ -141,7 +141,7 @@ namespace Stempeluhr2
             try
             {
                 conn.Close();
-                log("Datenbankverbindung geschlossen.");
+                //log("Datenbankverbindung geschlossen.");  //nur zu debugzwecken
                 return true;
             }
             catch (MySql.Data.MySqlClient.MySqlException ex)
