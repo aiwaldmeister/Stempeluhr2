@@ -72,7 +72,7 @@ namespace Stempeluhr2
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-            log("Programm wird beendet.......................................................................");
+            log("Programm wird beendet.......................................................................\r\n\r\n");
         }
 
         private void Codefeld_KeyPress(object sender, KeyPressEventArgs e)
@@ -185,7 +185,7 @@ namespace Stempeluhr2
             countdownbar.Visible = true;
             countdowntimer.Enabled = true;
 
-            log("countdown auf " + sekunden + " gesetzt");
+            //log("countdown auf " + sekunden + " gesetzt"); //nur zu debugzwecken
         }
 
         private void stopCountdown()
@@ -233,7 +233,7 @@ namespace Stempeluhr2
                 activetask_global = "";
                 Codefeld.Enabled = true;
                 Codefeld.Focus();
-                log("Status auf 'ready' gesetzt.");
+                log("Status auf 'ready' gesetzt.\r\n"); //zeilenumbruch zur optischen Trennung einzelner vorgänge im logfile
 
             }
             else if (zielstatus == "eingeloggt")
@@ -442,7 +442,7 @@ namespace Stempeluhr2
             comm.Parameters.Add("@sekunde", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = sekunde_global;
             comm.Parameters.Add("@dezimal", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = dezimalminute_global;
 
-            log("SQL:" + comm.CommandText);
+            log("\tSQL:" + comm.CommandText);
             try
             {
                 comm.ExecuteNonQuery();
@@ -457,7 +457,7 @@ namespace Stempeluhr2
             comm.Parameters.Add("@currenttask", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = auftrag;
             comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = user;
             
-            log("SQL:" + comm.CommandText);
+            log("\tSQL:" + comm.CommandText);
             try
             {
                 comm.ExecuteNonQuery();
@@ -489,7 +489,7 @@ namespace Stempeluhr2
             comm.Parameters.Add("@sekunde", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = sekunde_global;
             comm.Parameters.Add("@dezimal", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = dezimalminute_global;
 
-            log("SQL:" + comm.CommandText);
+            log("\tSQL:" + comm.CommandText);
             try
             {
                 comm.ExecuteNonQuery();
@@ -504,7 +504,7 @@ namespace Stempeluhr2
 
             comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = user;
 
-            log("SQL:" + comm.CommandText);
+            log("\tSQL:" + comm.CommandText);
             try
             {
                 comm.ExecuteNonQuery();
@@ -540,7 +540,7 @@ namespace Stempeluhr2
 
                 comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = activeuser_global;
 
-                log("SQL:" + comm.CommandText);
+                log("\tSQL:" + comm.CommandText);
                 MySql.Data.MySqlClient.MySqlDataReader Reader = comm.ExecuteReader();
 
                 //Detailanzeige fuellen
@@ -611,7 +611,7 @@ namespace Stempeluhr2
                 comm.Parameters.Add("@tag", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = tag_global;
 
 
-                log("SQL:" + comm.CommandText);
+                log("\tSQL:" + comm.CommandText);
                 Reader = comm.ExecuteReader();
 
                 while (Reader.Read())
@@ -673,7 +673,7 @@ namespace Stempeluhr2
                     comm.Parameters.Add("@monat", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = berechnungsdatum.Month.ToString("D2");
                     comm.Parameters.Add("@tag", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = berechnungsdatum.Day.ToString("D2");
 
-                    verrechnet_heute = (double)comm.ExecuteScalar();
+                    verrechnet_heute = Convert.ToDouble(comm.ExecuteScalar());
                     close_db();
                 }
                 catch (Exception ex) { log(ex.Message); }
@@ -706,7 +706,7 @@ namespace Stempeluhr2
 
             comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = usercode;
 
-            log("SQL:" + comm.CommandText);
+            log("\tSQL:" + comm.CommandText);
             try
             {
                 count = Convert.ToInt32(comm.ExecuteScalar());
@@ -728,7 +728,7 @@ namespace Stempeluhr2
 
                 comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = usercode;
 
-                log("SQL:" + comm.CommandText);
+                log("\tSQL:" + comm.CommandText);
                 try
                 {
                     Reader = comm.ExecuteReader();
@@ -748,7 +748,7 @@ namespace Stempeluhr2
 
                 comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = usercode;
 
-                log("SQL:" + comm.CommandText);
+                log("\tSQL:" + comm.CommandText);
                 try
                 {
                     autostempelungen = Convert.ToInt32(comm.ExecuteScalar());
@@ -802,7 +802,7 @@ namespace Stempeluhr2
             comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = activeuser_global;
             comm.Parameters.Add("@task", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = activetask_global;
             
-            log("SQL:" + comm.CommandText);
+            log("\tSQL:" + comm.CommandText);
             try
             {
                 sumstring = comm.ExecuteScalar() + "";
@@ -825,7 +825,7 @@ namespace Stempeluhr2
             comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = activeuser_global;
             comm.Parameters.Add("@task", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = activetask_global;
 
-            log("SQL:" + comm.CommandText);
+            log("\tSQL:" + comm.CommandText);
             try
             {
                 sumstring = comm.ExecuteScalar() + "";
@@ -834,7 +834,7 @@ namespace Stempeluhr2
                     sumstring = "0";
                 }
                 summe_anstempelungen = int.Parse(sumstring);
-                log("Summe anstempelungen: " + summe_abstempelungen);
+                log("Summe anstempelungen: " + summe_anstempelungen);
             }
             catch (MySql.Data.MySqlClient.MySqlException ex)
             {
@@ -859,7 +859,7 @@ namespace Stempeluhr2
             comm.Parameters.Add("@monat", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = monat_global;
             comm.Parameters.Add("@tag", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = tag_global;
             
-            log("SQL:" + comm.CommandText);
+            log("\tSQL:" + comm.CommandText);
             try
             {
                 stempelungenheute = Convert.ToInt32(comm.ExecuteScalar());
@@ -878,12 +878,12 @@ namespace Stempeluhr2
 
                 comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = usercode;
 
-                log("SQL:" + comm.CommandText);
+                log("\tSQL:" + comm.CommandText);
                 try
                 {
                     berechnungsstand_string = comm.ExecuteScalar() + "";
                 }
-                catch (Exception ex) { log("SQL: " + comm.CommandText + " Error: " + ex.Message); }
+                catch (Exception ex) { log("\tSQL: " + comm.CommandText + " Error: " + ex.Message); }
                 close_db();
                 DateTime datum_gestern = DateTime.ParseExact(jahr_global + monat_global + tag_global, "yyyyMMdd", null).AddDays(-1);
                 
@@ -901,7 +901,7 @@ namespace Stempeluhr2
 
                     comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = usercode;
 
-                    log("SQL:" + comm.CommandText);
+                    log("\tSQL:" + comm.CommandText);
                     Reader = comm.ExecuteReader();
                     bool Satzvorhanden = Reader.Read();
 
@@ -944,7 +944,7 @@ namespace Stempeluhr2
                         comm.Parameters.Add("@sekunde", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = letztestempelung_sekunde;
                         comm.Parameters.Add("@dezimal", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = letztestempelung_dezimalminuten;
                         
-                        log("SQL:" + comm.CommandText);
+                        log("\tSQL:" + comm.CommandText);
                         try
                         {
                             comm.ExecuteNonQuery();
@@ -978,7 +978,7 @@ namespace Stempeluhr2
 
                             comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = usercode;
 
-                            log("SQL:" + comm.CommandText);
+                            log("\tSQL:" + comm.CommandText);
                             try
                             {
                                 comm.ExecuteNonQuery();
@@ -993,14 +993,14 @@ namespace Stempeluhr2
                             //bisherigen zeitkontostand abfragen
                             open_db();
                             comm.Parameters.Clear();
-                            comm.CommandText = "SELECT zeitkonto FROM user where userid=@userid";
+                            comm.CommandText = "SELECT IFNULL(zeitkonto,0) FROM user where userid=@userid";
 
                             comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = usercode;
 
-                            log("SQL:" + comm.CommandText);
+                            log("\tSQL:" + comm.CommandText);
                             try
                             {
-                                zeitkontostand_bisher = (double)comm.ExecuteScalar();
+                                zeitkontostand_bisher = Convert.ToDouble(comm.ExecuteScalar());
                             }
                             catch (Exception ex) { log(ex.Message); }
                             close_db();
@@ -1021,7 +1021,7 @@ namespace Stempeluhr2
 
                             comm.Parameters.Add("@zeitkonto_berechnungsstand", MySql.Data.MySqlClient.MySqlDbType.VarChar, 8).Value = berechnungsjahr + berechnungsmonat + berechnungstag;
                             
-                            log("SQL:" + comm.CommandText);
+                            log("\tSQL:" + comm.CommandText);
                             try
                             {
                                 comm.ExecuteNonQuery();
@@ -1055,7 +1055,7 @@ namespace Stempeluhr2
             comm.Parameters.Add("@monat", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = berechnungsmonat;
             comm.Parameters.Add("@tag", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = berechnungstag;
             
-            log("SQL:" + comm.CommandText);
+            log("\tSQL:" + comm.CommandText);
             MySql.Data.MySqlClient.MySqlDataReader Reader = comm.ExecuteReader();
 
             //jeder schleifendurchlauf betrachtet ein paar aus an- und abstempelung
@@ -1245,7 +1245,7 @@ namespace Stempeluhr2
             comm.Parameters.Add("@monat", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = berechnungsmonat;
             comm.Parameters.Add("@tag", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = berechnungstag;
 
-            log("SQL:" + comm.CommandText);
+            log("\tSQL:" + comm.CommandText);
             try
             {
                 tmp = comm.ExecuteScalar();
@@ -1255,7 +1255,7 @@ namespace Stempeluhr2
 
             if (tmp != null)
             {   //es gab einen persönlichen Kalendereintrag -> dessen Sollzeit verwenden
-                sollzeit = (double)tmp;
+                sollzeit = Convert.ToDouble(tmp);
                 sollzeitquelle = "persönlicher Kalendereintrag";
             }else
             {   //es gab keinen persönlichen Kalendereintrag -> suche allgemeinen
@@ -1268,7 +1268,7 @@ namespace Stempeluhr2
                 comm.Parameters.Add("@monat", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = berechnungsmonat;
                 comm.Parameters.Add("@tag", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = berechnungstag;
 
-                log("SQL:" + comm.CommandText);
+                log("\tSQL:" + comm.CommandText);
                 try
                 {
                     tmp = comm.ExecuteScalar();
@@ -1277,7 +1277,7 @@ namespace Stempeluhr2
                 close_db();
                 if (tmp != null)
                 {   //es gab einen allgemeinen Kalendereintrag -> dessen Sollzeit verwenden
-                    sollzeit = (double)tmp;
+                    sollzeit = Convert.ToDouble(tmp);
                     sollzeitquelle = "allgemeiner Kalendereintrag";
                 }else
                 {   //es gab weder einen persönlichen noch einen allgemeinen Kalendereintrag -> Sollzeit hängt vom Wochentag ab
