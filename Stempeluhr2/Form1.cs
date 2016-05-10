@@ -340,7 +340,7 @@ namespace Stempeluhr2
         private void codeeingabe(string code)
         {
             int tmpcode;    //wegwerfvariable fuer den out-parameter von tryparse
-
+            log("["+code+"]->eingegeben");
             //fehler abfangen
             if (code.Length != 6)
             {
@@ -427,6 +427,7 @@ namespace Stempeluhr2
 
         private bool anstempeln(string user, string auftrag)
         {
+            log("Anstempeln... User " + user + " auf Auftrag " + auftrag);
             open_db();
             comm.Parameters.Clear();
             comm.CommandText = "INSERT INTO stamps (userid,task,art,jahr,monat,tag,stunde,minute,sekunde,dezimal,quelle,storniert) " +
@@ -469,11 +470,13 @@ namespace Stempeluhr2
 
             close_db();
             setstatus("gestempelt", user + " auf Auftrag " + auftrag + " eingestempelt.");
+
             return true;
         }
 
         private bool abstempeln(string user, string auftrag)
         {
+            log("Abstempeln... User " + user + " von Auftrag " + auftrag);
             open_db();
             comm.Parameters.Clear();
             comm.CommandText = "INSERT INTO stamps (userid,task,art,jahr,monat,tag,stunde,minute,sekunde,dezimal,quelle,storniert) "+
@@ -532,6 +535,7 @@ namespace Stempeluhr2
             string bonuszeit_bei_letzter_auszahlung = "";
             double planurlaub = 0;
 
+            log("Sammle Informationen und heutige Stempelungen für die Detailanzeige.");
             try
             {
                 open_db();
@@ -719,8 +723,10 @@ namespace Stempeluhr2
 
             if(count == 1)
             {   //User gefunden... wartungen durchführen und einloggen
+                log("User " + usercode + " gefunden, starte Wartungslauf.");
                 wartungslauf(usercode);
 
+                log("Prüfe auf Autostempelungen und Stempelfehler für die Warnungsanzeige.");
                 //Die wichtigsten Infos zum User aus der Datenbank holen
                 open_db();
                 comm.Parameters.Clear();
@@ -793,6 +799,7 @@ namespace Stempeluhr2
 
         private void berechne_activetask_zeitbisher_global()
         {
+            log("Berechne bisherige Zeit auf aktuellem Auftrag");
             int summe_abstempelungen = 0;
             int summe_anstempelungen = 0;
             string sumstring = "";
@@ -812,7 +819,7 @@ namespace Stempeluhr2
                 }
                 summe_abstempelungen = int.Parse(sumstring);
                 summe_abstempelungen = summe_abstempelungen + int.Parse(stunde_global) * 100 + int.Parse(dezimalminute_global);
-                log("Summe abstempelungen: " + summe_abstempelungen);
+                //log("Summe abstempelungen: " + summe_abstempelungen); //war zu debugzwecken
             }
             catch (MySql.Data.MySqlClient.MySqlException ex)
             {
@@ -834,7 +841,7 @@ namespace Stempeluhr2
                     sumstring = "0";
                 }
                 summe_anstempelungen = int.Parse(sumstring);
-                log("Summe anstempelungen: " + summe_anstempelungen);
+                //log("Summe anstempelungen: " + summe_anstempelungen);//war zudebugzwecken
             }
             catch (MySql.Data.MySqlClient.MySqlException ex)
             {
@@ -842,7 +849,9 @@ namespace Stempeluhr2
             }
             int activetask_zeitbisher_stunden = (summe_abstempelungen - summe_anstempelungen) / 100;
             int activetask_zeitbisher_decimal = (summe_abstempelungen - summe_anstempelungen) % 100;
+
             activetask_zeitbisher_global = activetask_zeitbisher_stunden.ToString() + "," + activetask_zeitbisher_decimal.ToString("D2");
+            log("Ermittelte Zeit auf aktuellem Auftrag: " + activetask_zeitbisher_global + " Std.");
         }
 
         private void wartungslauf(String usercode)
@@ -1222,6 +1231,7 @@ namespace Stempeluhr2
                         
             if(Fehler == "")
             {
+                log("Ermittelte Istzeit für "+ berechnungstag + "." + berechnungsmonat + "." + berechnungsjahr + ": " + Istzeit_tmp + " Std.");
                 return Istzeit_tmp;
             }
             else
@@ -1295,7 +1305,7 @@ namespace Stempeluhr2
                     }
                 }
             }
-            log("Ermittelte Sollzeit für " + berechnungstag + "." + berechnungsmonat + "." + berechnungsjahr + ": " + sollzeit + " (" + sollzeitquelle + ")" );
+            log("Ermittelte Sollzeit für " + berechnungstag + "." + berechnungsmonat + "." + berechnungsjahr + ": " + sollzeit + " Std. (" + sollzeitquelle + ")" );
             return sollzeit;
 
         }
