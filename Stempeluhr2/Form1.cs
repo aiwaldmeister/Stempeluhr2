@@ -110,7 +110,15 @@ namespace Stempeluhr2
             dbuserconf_global = System.Configuration.ConfigurationManager.AppSettings["dbuser"];
             dbpwconf_global = System.Configuration.ConfigurationManager.AppSettings["dbpw"];
 
-            log("Config-File gelesen, Datenbankinfos gesetzt.('" + dbserverconf_global + "','" + dbnameconf_global + "','" + dbuserconf_global + "','" + dbpwconf_global + "')");
+            if(dbserverconf_global == "" || dbnameconf_global == "" || dbuserconf_global == "")
+            {//Config-werte nach lesen der Config file immernoch leer...
+                log("DB-Konfiguration konnte nicht aus der Config-File gelesen werden!");
+            }else
+            {
+                log("Config-File gelesen, Datenbankinfos gesetzt.('" + dbserverconf_global + "','" + dbnameconf_global + "','" + dbuserconf_global + "','" + dbpwconf_global + "')");
+
+            }
+
         }
 
         private void init_db(string server, string database, string uid, string password)
@@ -422,7 +430,7 @@ namespace Stempeluhr2
             open_db();
             comm.Parameters.Clear();
             comm.CommandText = "INSERT INTO stamps (userid,task,art,jahr,monat,tag,stunde,minute,sekunde,dezimal,quelle,storniert) " +
-                                "VALUES ('@userid','@task','an','@jahr','@monat','@tag','@stunde','@minute','@sekunde','@dezimal','stempeluhr', 0)";
+                                "VALUES (@userid,@task,'an',@jahr,@monat,@tag,@stunde,@minute,@sekunde,@dezimal,'stempeluhr', 0)";
 
             comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = user;
             comm.Parameters.Add("@task", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = auftrag;
@@ -444,7 +452,7 @@ namespace Stempeluhr2
                 log(ex.Message);
             }
             comm.Parameters.Clear();
-            comm.CommandText = "UPDATE user SET currenttask='@currenttask' where userid = '@userid'";
+            comm.CommandText = "UPDATE user SET currenttask=@currenttask where userid = @userid";
 
             comm.Parameters.Add("@currenttask", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = auftrag;
             comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = user;
@@ -469,7 +477,7 @@ namespace Stempeluhr2
             open_db();
             comm.Parameters.Clear();
             comm.CommandText = "INSERT INTO stamps (userid,task,art,jahr,monat,tag,stunde,minute,sekunde,dezimal,quelle,storniert) "+
-                                "VALUES ('@userid','@task','ab','@jahr','@monat','@tag','@stunde','@minute','@sekunde','@dezimal','stempeluhr', 0)";
+                                "VALUES (@userid,@task,'ab',@jahr,@monat,@tag,@stunde,@minute,@sekunde,@dezimal,'stempeluhr', 0)";
 
             comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = user;
             comm.Parameters.Add("@task", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = auftrag;
@@ -492,7 +500,7 @@ namespace Stempeluhr2
             }
 
             comm.Parameters.Clear();
-            comm.CommandText = "UPDATE user SET currenttask='' where userid = '@userid'";
+            comm.CommandText = "UPDATE user SET currenttask='' where userid = @userid";
 
             comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = user;
 
@@ -528,7 +536,7 @@ namespace Stempeluhr2
             {
                 open_db();
                 comm.Parameters.Clear();
-                comm.CommandText = "SELECT * FROM user where userid='@userid'";
+                comm.CommandText = "SELECT * FROM user where userid=@userid";
 
                 comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = activeuser_global;
 
@@ -542,7 +550,7 @@ namespace Stempeluhr2
                 zeitkonto_berechnungsstand = DateTime.ParseExact(Reader["zeitkonto_berechnungsstand"] + "", "yyyyMMdd", null);
                 bonuskonto_ausgezahlt_bis = DateTime.ParseExact(Reader["bonuskonto_ausgezahlt_bis"] + "", "yyyyMMdd", null);
                 bonuszeit_bei_letzter_auszahlung = Reader["bonuszeit_bei_letzter_auszahlung"] + "";
-                jahresuhrlaub = (double)Reader["jahresurlaub"];
+                jahresuhrlaub = Convert.ToDouble(Reader["jahresurlaub"]);
                 Reader.Close();
                 close_db();
 
@@ -554,36 +562,36 @@ namespace Stempeluhr2
                 //Resturlaub ermitteln
                 open_db();
                 comm.Parameters.Clear();
-                comm.CommandText = "SELECT SUM(urlaubstage_abziehen) from kalender WHERE zuordnung in ('@zuordnung','allgemein') " + 
-                                    "AND jahr = '@jahr' AND ( monat < '@monat' OR( monat = '@monat' AND tag <= '@tag')) AND storniert = 0";
+                comm.CommandText = "SELECT IFNULL(SUM(urlaubstage_abziehen),0) from kalender WHERE zuordnung in (@zuordnung,'allgemein') " + 
+                                    "AND jahr = @jahr AND ( monat < @monat OR( monat = @monat AND tag <= @tag)) AND storniert = 0";
 
                 comm.Parameters.Add("@zuordnung", MySql.Data.MySqlClient.MySqlDbType.VarChar, 9).Value = activeuser_global;
                 comm.Parameters.Add("@jahr", MySql.Data.MySqlClient.MySqlDbType.VarChar, 4).Value = jahr_global;
                 comm.Parameters.Add("@monat", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = monat_global;
                 comm.Parameters.Add("@tag", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = tag_global;
 
-                resturlaub = jahresuhrlaub - (double)comm.ExecuteScalar();
+                resturlaub = jahresuhrlaub - Convert.ToDouble(comm.ExecuteScalar());
                 close_db();
 
                 //bereits geplante Urlaubstage ermitteln
                 open_db();
                 comm.Parameters.Clear();
-                comm.CommandText = "SELECT SUM(urlaubstage_abziehen) from kalender WHERE zuordnung in ('@zuordnung','allgemein') " +
-                                    "AND jahr = '@jahr' AND ( monat > '@monat' OR ( monat = '@monat' AND tag > '@tag')) AND storniert = 0";
+                comm.CommandText = "SELECT IFNULL(SUM(urlaubstage_abziehen),0) from kalender WHERE zuordnung in (@zuordnung,'allgemein') " +
+                                    "AND jahr = @jahr AND ( monat > @monat OR ( monat = @monat AND tag > @tag)) AND storniert = 0";
 
                 comm.Parameters.Add("@zuordnung", MySql.Data.MySqlClient.MySqlDbType.VarChar, 9).Value = activeuser_global;
                 comm.Parameters.Add("@jahr", MySql.Data.MySqlClient.MySqlDbType.VarChar, 4).Value = jahr_global;
                 comm.Parameters.Add("@monat", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = monat_global;
                 comm.Parameters.Add("@tag", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = tag_global;
 
-                planurlaub = (double)comm.ExecuteScalar();
+                planurlaub = Convert.ToDouble(comm.ExecuteScalar());
                 close_db();
 
  
                 Detailanzeige.Text = "Stundenkonto\r\n" + zeitkonto + "\r\n\r\n" +
                                      "Stand der Stundenberechnung\r\n" + zeitkonto_berechnungsstand.ToLongDateString() + "\r\n\r\n" +
                                     "Resturlaub bis Jahresende\r\n" + resturlaub + " Tage\r\n\r\n" +
-                                    "Bereits geplanter Urlaub\r\n" + planurlaub + " Tage\r\n\r\n" +
+                                    "Davon bereits geplanter Urlaub\r\n" + planurlaub + " Tage\r\n\r\n" +
                                     "_________________________\r\n\r\n\r\n" +
                                     "Bonuszeiten ausgezahlt bis \r\n" + bonuskonto_ausgezahlt_bis.ToLongDateString() + "\r\n\r\n" +
                                     "Bonus bei der letzten Auszahlung\r\n" + bonuszeit_bei_letzter_auszahlung + " Stunden\r\n\r\n" +
@@ -593,8 +601,8 @@ namespace Stempeluhr2
                 Stempelliste.Items.Clear();
                 open_db();
                 comm.Parameters.Clear();
-                comm.CommandText = "SELECT * FROM stamps where userid='@userid'"+
-                                    "AND jahr ='@jahr' AND monat = '@monat' AND tag = '@tag' AND art in ('ab','an') "+
+                comm.CommandText = "SELECT * FROM stamps where userid=@userid "+
+                                    "AND jahr =@jahr AND monat = @monat AND tag = @tag AND art in ('ab','an') "+
                                     "ORDER BY jahr ASC, monat ASC, tag ASC, stunde ASC, minute ASC, sekunde ASC, art ASC";
 
                 comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = activeuser_global;
@@ -657,8 +665,8 @@ namespace Stempeluhr2
                 {
                     open_db();
                     comm.Parameters.Clear();
-                    comm.CommandText = "SELECT SUM(stunden) FROM verrechnung WHERE person='@person' "+
-                                    "AND jahr = '@jahr' AND monat = '@monat' AND TAG = '@tag' AND storniert = 0";
+                    comm.CommandText = "SELECT IFNULL(SUM(stunden),0) FROM verrechnung WHERE person=@person "+
+                                    "AND jahr = @jahr AND monat = @monat AND TAG = @tag AND storniert = 0";
 
                     comm.Parameters.Add("@person", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = user;
                     comm.Parameters.Add("@jahr", MySql.Data.MySqlClient.MySqlDbType.VarChar, 4).Value = berechnungsdatum.Year.ToString("D4");
@@ -694,14 +702,14 @@ namespace Stempeluhr2
             //prüfen ob person angelegt ist
             open_db();
             comm.Parameters.Clear();
-            comm.CommandText = "SELECT count(*) FROM user where userid='@userid'";
+            comm.CommandText = "SELECT count(*) FROM user where userid = @userid";
 
             comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = usercode;
 
             log("SQL:" + comm.CommandText);
             try
             {
-                count = (int)comm.ExecuteScalar();
+                count = Convert.ToInt32(comm.ExecuteScalar());
             }
             catch (Exception ex)
             {
@@ -716,7 +724,7 @@ namespace Stempeluhr2
                 //Die wichtigsten Infos zum User aus der Datenbank holen
                 open_db();
                 comm.Parameters.Clear();
-                comm.CommandText = "SELECT name, vorname, currenttask, stempelfehler FROM user where userid='@userid'";
+                comm.CommandText = "SELECT name, vorname, currenttask, stempelfehler FROM user where userid=@userid";
 
                 comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = usercode;
 
@@ -736,14 +744,14 @@ namespace Stempeluhr2
                 activetask_global = currenttask;
 
                 comm.Parameters.Clear();
-                comm.CommandText = "SELECT count(*) FROM stamps WHERE userid='@userid' AND quelle='wartung' AND storniert = 0";
+                comm.CommandText = "SELECT count(*) FROM stamps WHERE userid=@userid AND quelle='wartung' AND storniert = 0";
 
                 comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = usercode;
 
                 log("SQL:" + comm.CommandText);
                 try
                 {
-                    autostempelungen = (int)comm.ExecuteScalar();
+                    autostempelungen = Convert.ToInt32(comm.ExecuteScalar());
                 }
                 catch (Exception ex) { log(ex.Message); }
 
@@ -789,8 +797,8 @@ namespace Stempeluhr2
             int summe_anstempelungen = 0;
             string sumstring = "";
             comm.Parameters.Clear();
-            comm.CommandText = "SELECT ((SUM(stunde) * 100)  + SUM(dezimal)) FROM stamps WHERE userid = '@userid' AND "+
-                                "task = '@task' AND art='ab' AND storniert = 0";
+            comm.CommandText = "SELECT IFNULL((SUM(stunde) * 100)  + (SUM(dezimal)),0) FROM stamps WHERE userid = @userid AND "+
+                                "task = @task AND art='ab' AND storniert = 0";
             comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = activeuser_global;
             comm.Parameters.Add("@task", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = activetask_global;
             
@@ -811,8 +819,8 @@ namespace Stempeluhr2
                 log(ex.Message);
             }
             comm.Parameters.Clear();
-            comm.CommandText = "SELECT ((SUM(stunde) * 100)  + SUM(dezimal)) FROM stamps WHERE userid = '@userid' AND " +
-                                 "task = '@task' AND art='an' AND storniert = 0";
+            comm.CommandText = "SELECT IFNULL((SUM(stunde) * 100)  + (SUM(dezimal)),0) FROM stamps WHERE userid = @userid AND " +
+                                 "task = @task AND art='an' AND storniert = 0";
 
             comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = activeuser_global;
             comm.Parameters.Add("@task", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = activetask_global;
@@ -844,7 +852,7 @@ namespace Stempeluhr2
             bool fehlerflag = false;
             open_db();
             comm.Parameters.Clear();
-            comm.CommandText = "SELECT count(*) FROM stamps where userid='@userid' AND tag='@tag' AND monat='@monat' AND jahr = '@jahr'";
+            comm.CommandText = "SELECT count(*) FROM stamps where userid=@userid AND tag=@tag AND monat=@monat AND jahr = @jahr";
 
             comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = usercode;
             comm.Parameters.Add("@jahr", MySql.Data.MySqlClient.MySqlDbType.VarChar, 4).Value = jahr_global;
@@ -854,7 +862,7 @@ namespace Stempeluhr2
             log("SQL:" + comm.CommandText);
             try
             {
-                stempelungenheute = (int)comm.ExecuteScalar();
+                stempelungenheute = Convert.ToInt32(comm.ExecuteScalar());
             }
             catch (Exception ex) { log(ex.Message); }
             close_db();
@@ -866,7 +874,7 @@ namespace Stempeluhr2
                 string berechnungsstand_string = "";
                 open_db();
                 comm.Parameters.Clear();
-                comm.CommandText = "SELECT zeitkonto_berechnungsstand FROM user where userid='@userid'";
+                comm.CommandText = "SELECT zeitkonto_berechnungsstand FROM user where userid=@userid";
 
                 comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = usercode;
 
@@ -888,7 +896,7 @@ namespace Stempeluhr2
                     //den letzen gestempelten tag sauber schliessen
                     open_db();
                     comm.Parameters.Clear();
-                    comm.CommandText = "select * from stamps where userid = '@userid' AND storniert = 0 "+
+                    comm.CommandText = "select * from stamps where userid = @userid AND storniert = 0 "+
                                         "ORDER BY jahr DESC, monat DESC, tag DESC, stunde DESC, minute DESC, sekunde DESC, art DESC LIMIT 1";
 
                     comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = usercode;
@@ -924,7 +932,7 @@ namespace Stempeluhr2
                         open_db();
                         comm.Parameters.Clear();
                         comm.CommandText = "INSERT INTO stamps (userid,task,art,jahr,monat,tag,stunde,minute,sekunde,dezimal,quelle,storniert) " +
-                                           "VALUES ('@userid','@task','ab','@jahr','@monat','@tag','@stunde','@minute','@sekunde','@dezimal','wartung',0)";
+                                           "VALUES (@userid,@task,'ab',@jahr,@monat,@tag,@stunde,@minute,@sekunde,@dezimal,'wartung',0)";
 
                         comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = usercode;
                         comm.Parameters.Add("@task", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = letztestempelung_auftrag;
@@ -966,7 +974,7 @@ namespace Stempeluhr2
                             log("Fehler bei der Zeitberechnung -> Stundenkonto wird nicht aktualisiert");
                             open_db();
                             comm.Parameters.Clear();
-                            comm.CommandText = "UPDATE user SET stempelfehler='1' where userid = '@userid'";
+                            comm.CommandText = "UPDATE user SET stempelfehler=1 where userid = @userid";
 
                             comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = usercode;
 
@@ -985,7 +993,7 @@ namespace Stempeluhr2
                             //bisherigen zeitkontostand abfragen
                             open_db();
                             comm.Parameters.Clear();
-                            comm.CommandText = "SELECT zeitkonto FROM user where userid='@userid'";
+                            comm.CommandText = "SELECT zeitkonto FROM user where userid=@userid";
 
                             comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = usercode;
 
@@ -1002,7 +1010,7 @@ namespace Stempeluhr2
                             //neuen zeitkontostand beim Mitarbeiter eintragen und berechnungsstand auf das berechnungsdatum setzen
                             open_db();
                             comm.Parameters.Clear();
-                            comm.CommandText = "UPDATE user SET zeitkonto='@zeitkonto', zeitkonto_berechnungsstand = '@zeitkonto_berechnungsstand' where userid = '@userid'";
+                            comm.CommandText = "UPDATE user SET zeitkonto=@zeitkonto, zeitkonto_berechnungsstand = @zeitkonto_berechnungsstand where userid = @userid";
 
                             comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = usercode;
 
@@ -1039,7 +1047,7 @@ namespace Stempeluhr2
             open_db();
             comm.Parameters.Clear();
             //die sortierung soll sicherstellen dass immer die zusammenpassenden an+abstempelungen nacheinander kommen
-            comm.CommandText = "SELECT * FROM stamps WHERE userid = '@userid' AND jahr = '@jahr' AND monat = '@monat' AND tag = '@tag'  AND storniert = 0 " +
+            comm.CommandText = "SELECT * FROM stamps WHERE userid = @userid AND jahr = @jahr AND monat = @monat AND tag = @tag  AND storniert = 0 " +
                                 "ORDER BY jahr ASC, monat ASC, tag ASC, stunde ASC, minute ASC, sekunde ASC, art ASC";
 
             comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = usercode;
@@ -1229,8 +1237,8 @@ namespace Stempeluhr2
             string sollzeitquelle = "";
             open_db();
             comm.Parameters.Clear();
-            comm.CommandText = "SELECT sollzeit FROM kalender where zuordnung='@zuordnung' "+
-                                "AND jahr = '@jahr' AND monat = '@monat' AND tag = '@tag' AND storniert = 0";
+            comm.CommandText = "SELECT sollzeit FROM kalender where zuordnung=@zuordnung "+
+                                "AND jahr = @jahr AND monat = @monat AND tag = @tag AND storniert = 0";
 
             comm.Parameters.Add("@zuordnung", MySql.Data.MySqlClient.MySqlDbType.VarChar, 9).Value = usercode;
             comm.Parameters.Add("@jahr", MySql.Data.MySqlClient.MySqlDbType.VarChar, 4).Value = berechnungsjahr;
@@ -1254,7 +1262,7 @@ namespace Stempeluhr2
                 open_db();
                 comm.Parameters.Clear();
                 comm.CommandText = "SELECT sollzeit FROM kalender where zuordnung='allgemein' "+
-                                    "AND jahr = '@jahr' AND monat = '@monat' AND tag = '@tag' AND storniert = 0";
+                                    "AND jahr = @jahr AND monat = @monat AND tag = @tag AND storniert = 0";
 
                 comm.Parameters.Add("@jahr", MySql.Data.MySqlClient.MySqlDbType.VarChar, 4).Value = berechnungsjahr;
                 comm.Parameters.Add("@monat", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = berechnungsmonat;
