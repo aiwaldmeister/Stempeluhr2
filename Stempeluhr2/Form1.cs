@@ -686,9 +686,10 @@ namespace Stempeluhr2
                 summe_bonuszeiten = summe_bonuszeiten + verrechnet_heute - (sollzeit_heute * 0.55);
 
 
-                berechnungsdatum.AddDays(1);
+                berechnungsdatum = berechnungsdatum.AddDays(1);
             }
 
+            
             return summe_bonuszeiten;
         }
 
