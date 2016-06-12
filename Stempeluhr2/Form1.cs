@@ -524,11 +524,14 @@ namespace Stempeluhr2
 
         private bool showdetails()
         {
+            //TODO Urlaubsberechnung: neuen wert (resturlaub_vorjahr) beruecksichtigen
             string name = "";
             string zeitkonto = "";
             DateTime zeitkonto_berechnungsstand;
             double resturlaub = 0;
             double jahresuhrlaub = 0;
+            string akt_urlabsjahr = "";
+            double resturlaub_vorjahr = 0;
             string bonuszeit_gesternabend = "";
             DateTime bonuskonto_ausgezahlt_bis;
 
@@ -555,6 +558,8 @@ namespace Stempeluhr2
                 bonuskonto_ausgezahlt_bis = DateTime.ParseExact(Reader["bonuskonto_ausgezahlt_bis"] + "", "yyyyMMdd", null);
                 bonuszeit_bei_letzter_auszahlung = Reader["bonuszeit_bei_letzter_auszahlung"] + "";
                 jahresuhrlaub = Convert.ToDouble(Reader["jahresurlaub"]);
+                akt_urlabsjahr = Reader["akt_urlaubsjahr"] + "";
+                resturlaub_vorjahr = Convert.ToDouble(Reader["resturlaub_vorjahr"]);
                 Reader.Close();
                 close_db();
 
@@ -605,7 +610,7 @@ namespace Stempeluhr2
                 Stempelliste.Items.Clear();
                 open_db();
                 comm.Parameters.Clear();
-                comm.CommandText = "SELECT * FROM stamps where userid=@userid "+
+                comm.CommandText = "SELECT * FROM stamps where userid=@userid AND storniert=0"+
                                     "AND jahr =@jahr AND monat = @monat AND tag = @tag AND art in ('ab','an') "+
                                     "ORDER BY jahr ASC, monat ASC, tag ASC, stunde ASC, minute ASC, sekunde ASC, art ASC";
 
