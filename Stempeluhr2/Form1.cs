@@ -957,12 +957,18 @@ namespace Stempeluhr2
                         log("\tSQL:" + comm.CommandText);
                         try
                         {
-                            comm.ExecuteNonQuery();
-                            log("Automatische Abstempelung wird eingetragen. SQL:" + comm.CommandText);
+                            comm.ExecuteNonQuery();                          
                         }
                         catch (MySql.Data.MySqlClient.MySqlException ex) { log(ex.Message); }
                         close_db();
+
+                        //TODO die aktive Task des benutzers noch auf "" setzen
+
+
                     }
+
+
+
 
                     //tag für tag istzeit berechnen, mit sollzeit abgleichen, auf zeitkonto anrechnen bis zeitkontostand bei gestern abend ist oder ein fehler auftritt
                     while (DateTime.Compare(datum_letzte_zeitberechnung, datum_gestern) < 0  && fehlerflag == false)
