@@ -123,7 +123,11 @@ namespace Stempeluhr2
 
         private void init_db(string server, string database, string uid, string password)
         {
-            conn.ConnectionString = "SERVER = " + server + "; " + "DATABASE = " + database + ";" + "UID=" + uid + ";" + "PASSWORD=" + password + ";";
+            conn.ConnectionString = "SERVER=" + server + "; "  + 
+                                    "DATABASE=" + database + ";" +
+                                    "UID=" + uid + ";" + 
+                                    "PASSWORD=" + password + ";" ;
+
             log("Datenbank ConnectionString initialisiert");
         }
 
@@ -164,9 +168,9 @@ namespace Stempeluhr2
         {
             using (StreamWriter file = new StreamWriter(logfilename_global, true))
             {
-                file.WriteLine(DateTime.Now.ToLongTimeString() + ": " + text);
+                file.WriteLine(DateTime.Now.ToLongTimeString() + "(+" + DateTime.Now.Millisecond + "): " + text);
             }
-            Console.WriteLine("Log: " + DateTime.Now.ToLongTimeString() + ": " + text);
+            Console.WriteLine("Log: " + DateTime.Now.ToLongTimeString() + "(+" +  DateTime.Now.Millisecond +  "): " + text);
         }
 
         private void message(string text, Color farbe)
@@ -529,7 +533,7 @@ namespace Stempeluhr2
             DateTime zeitkonto_berechnungsstand;
             double resturlaub = 0;
             double jahresuhrlaub = 0;
-            string bonuszeit_gesternabend = "";
+            //string bonuszeit_gesternabend = "";
             DateTime bonuskonto_ausgezahlt_bis;
 
             string bonuszeit_bei_letzter_auszahlung = "";
@@ -559,11 +563,13 @@ namespace Stempeluhr2
                 close_db();
 
                 //Bonuszeit on the fly berechnen
-                DateTime datumgestern = DateTime.ParseExact(jahr_global + monat_global + tag_global, "yyyyMMdd", null).AddDays(-1);
-                bonuszeit_gesternabend = ermittlebonuszeit(activeuser_global,bonuskonto_ausgezahlt_bis.AddDays(1),datumgestern).ToString();
-                
+                //log("\tberechnebonuszeit");
+                //DateTime datumgestern = DateTime.ParseExact(jahr_global + monat_global + tag_global, "yyyyMMdd", null).AddDays(-1);
+                //bonuszeit_gesternabend = ermittlebonuszeit(activeuser_global,bonuskonto_ausgezahlt_bis.AddDays(1),datumgestern).ToString();
+
 
                 //Resturlaub ermitteln
+                log("\termittleresturlaub");
                 open_db();
                 comm.Parameters.Clear();
                 comm.CommandText = "SELECT IFNULL(SUM(urlaubstage_abziehen),0) from kalender WHERE zuordnung in (@zuordnung,'allgemein') " + 
@@ -578,6 +584,7 @@ namespace Stempeluhr2
                 close_db();
 
                 //bereits geplante Urlaubstage ermitteln
+                log("\termittleplanurlaub");
                 open_db();
                 comm.Parameters.Clear();
                 comm.CommandText = "SELECT IFNULL(SUM(urlaubstage_abziehen),0) from kalender WHERE zuordnung in (@zuordnung,'allgemein') " +
@@ -598,10 +605,12 @@ namespace Stempeluhr2
                                     "Davon bereits geplanter Urlaub\r\n" + planurlaub + " Tage\r\n\r\n" +
                                     "_________________________\r\n\r\n\r\n" +
                                     "Bonuszeiten ausgezahlt bis \r\n" + bonuskonto_ausgezahlt_bis.ToLongDateString() + "\r\n\r\n" +
-                                    "Bonus bei der letzten Auszahlung\r\n" + bonuszeit_bei_letzter_auszahlung + " Stunden\r\n\r\n" +
-                                    "Bonuszeit (Stand gestern Abend)\r\n" + bonuszeit_gesternabend + " Stunden";
-                
+                                    "Bonus bei der letzten Auszahlung\r\n" + bonuszeit_bei_letzter_auszahlung + " Stunden\r\n\r\n" 
+                                    //+ "Bonuszeit (Stand gestern Abend)\r\n" + bonuszeit_gesternabend + " Stunden"
+                                    ;
+
                 //Stempelliste fuellen
+                log("\tfuellestempelliste");
                 Stempelliste.Items.Clear();
                 open_db();
                 comm.Parameters.Clear();
@@ -649,7 +658,6 @@ namespace Stempeluhr2
             {
                 log(ex.Message);
             }
-            
             setstatus("userinfos", "Details zu " + name);
             return true;
         }
@@ -664,7 +672,6 @@ namespace Stempeluhr2
                 double verrechnet_heute = 0;
                 double sollzeit_heute = 0;
                 sollzeit_heute = ermittleSollZeit(user, berechnungsdatum.Year.ToString("D4"), berechnungsdatum.Month.ToString("D2"), berechnungsdatum.Day.ToString("D2"));
-
                 try
                 {
                     open_db();
@@ -707,8 +714,7 @@ namespace Stempeluhr2
             //prüfen ob person angelegt ist
             open_db();
             comm.Parameters.Clear();
-            comm.CommandText = "SELECT count(*) FROM user where userid = @userid";
-
+            comm.CommandText = "SELECT EXISTS (SELECT 1 FROM user WHERE userid = @userid)";
             comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = usercode;
 
             log("\tSQL:" + comm.CommandText);
@@ -751,7 +757,7 @@ namespace Stempeluhr2
                 activetask_global = currenttask;
 
                 comm.Parameters.Clear();
-                comm.CommandText = "SELECT count(*) FROM stamps WHERE userid=@userid AND quelle='wartung' AND storniert = 0";
+                comm.CommandText = "SELECT EXISTS(SELECT 1 FROM stamps WHERE quelle='wartung' AND userid=@userid AND storniert = 0)";
 
                 comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = usercode;
 
@@ -858,11 +864,11 @@ namespace Stempeluhr2
         private void wartungslauf(String usercode)
         {
             MySql.Data.MySqlClient.MySqlDataReader Reader;
-            int stempelungenheute = 0;
+            int heutebereitsgestempelt = 0;
             bool fehlerflag = false;
             open_db();
             comm.Parameters.Clear();
-            comm.CommandText = "SELECT count(*) FROM stamps where userid=@userid AND tag=@tag AND monat=@monat AND jahr = @jahr";
+            comm.CommandText = "SELECT EXISTS(SELECT 1 FROM stamps where userid=@userid AND tag=@tag AND monat=@monat AND jahr = @jahr)";
 
             comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = usercode;
             comm.Parameters.Add("@jahr", MySql.Data.MySqlClient.MySqlDbType.VarChar, 4).Value = jahr_global;
@@ -872,11 +878,11 @@ namespace Stempeluhr2
             log("\tSQL:" + comm.CommandText);
             try
             {
-                stempelungenheute = Convert.ToInt32(comm.ExecuteScalar());
+                heutebereitsgestempelt = Convert.ToInt32(comm.ExecuteScalar());
             }
             catch (Exception ex) { log(ex.Message); }
             close_db();
-            if (stempelungenheute == 0)
+            if (heutebereitsgestempelt == 0)
             {   //es gab noch keine stempelungen für diese person heute -> prüfen ob der stand sauber ist
                 log("Noch keine Stempelungen heute auf " + usercode + ". Prüfe ob Wartung nötig...");
 
@@ -962,7 +968,20 @@ namespace Stempeluhr2
                         catch (MySql.Data.MySqlClient.MySqlException ex) { log(ex.Message); }
                         close_db();
 
-                        //TODO die aktive Task des benutzers noch auf "" setzen
+                        //die aktive Task des benutzers nach der autoabstempelung auf "" setzen
+                        open_db();
+                        comm.Parameters.Clear();
+                        comm.CommandText = "UPDATE user SET task='' where userid = @userid";
+
+                        comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = usercode;
+
+                        log("\tSQL:" + comm.CommandText);
+                        try
+                        {
+                            comm.ExecuteNonQuery();                           
+                        }
+                        catch (MySql.Data.MySqlClient.MySqlException ex) { log(ex.Message); }
+                        close_db();
 
 
                     }
@@ -998,7 +1017,7 @@ namespace Stempeluhr2
                             try
                             {
                                 comm.ExecuteNonQuery();
-                                log("Fehler beim Mitarbeiter vermerkt. SQL:" + comm.CommandText);
+                                log("Fehler beim Mitarbeiter vermerkt.");
                             }
                             catch (MySql.Data.MySqlClient.MySqlException ex) { log(ex.Message); }
                             close_db();
@@ -1041,7 +1060,7 @@ namespace Stempeluhr2
                             try
                             {
                                 comm.ExecuteNonQuery();
-                                log("Zeitkonto aktualisiert. SQL:" + comm.CommandText);
+                                log("Zeitkonto aktualisiert.");
                             }
                             catch (MySql.Data.MySqlClient.MySqlException ex){ log(ex.Message); }
                             close_db();
@@ -1059,7 +1078,7 @@ namespace Stempeluhr2
             double Istzeit_tmp = 0;
             double Pausenzeit_tmp = 0;
             string Fehler = "";
-
+            
             open_db();
             comm.Parameters.Clear();
             //die sortierung soll sicherstellen dass immer die zusammenpassenden an+abstempelungen nacheinander kommen
@@ -1081,6 +1100,7 @@ namespace Stempeluhr2
                 string an_stunde = Reader["stunde"] + "";
                 string an_dezimal = Reader["dezimal"] + "";
                 string an_task = Reader["task"] + "";
+                string an_art = Reader["art"] + "";
                 double an_uhrzeit_dezimal = double.Parse(an_stunde + "," + an_dezimal);
                 
                 
@@ -1089,12 +1109,28 @@ namespace Stempeluhr2
                 string ab_stunde = Reader["stunde"] + "";
                 string ab_dezimal = Reader["dezimal"] + "";
                 string ab_task = Reader["task"] + "";
+                string ab_art = Reader["art"] + "";
                 double ab_uhrzeit_dezimal = double.Parse(ab_stunde + "," + ab_dezimal);
+
+                if(an_art != "an" || ab_art != "ab")
+                {
+                    Fehler = "Abstempelung wo Anstempelung erwartet wurde oder umgekehrt";
+                    log(Fehler);
+
+                    Reader.Close();
+                    close_db();
+
+                    return -1;
+                }
 
                 if (an_task != ab_task)
                 {
                     Fehler = "Zeitpaar passt nicht zusammen (verschiedene tasks)";
                     log(Fehler);
+
+                    Reader.Close();
+                    close_db();
+
                     return -1;
                 }
 
