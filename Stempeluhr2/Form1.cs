@@ -542,8 +542,10 @@ namespace Stempeluhr2
             string name = "";
             string zeitkonto = "";
             DateTime zeitkonto_berechnungsstand;
-            double resturlaub = 0;
+            double akt_resturlaub_berechnet = 0;
             double jahresuhrlaub = 0;
+            string urlaubsjahr = "";
+            double resturlaub_vorjahr = 0;
             //string bonuszeit_gesternabend = "";
             DateTime bonuskonto_ausgezahlt_bis;
 
@@ -571,6 +573,8 @@ namespace Stempeluhr2
                 bonuskonto_ausgezahlt_bis = DateTime.ParseExact(Reader["bonuskonto_ausgezahlt_bis"] + "", "yyyyMMdd", null);
                 bonuszeit_bei_letzter_auszahlung = Reader["bonuszeit_bei_letzter_auszahlung"] + "";
                 jahresuhrlaub = Convert.ToDouble(Reader["jahresurlaub"]);
+                urlaubsjahr = Reader["akt_urlaubsjahr"] + "";
+                resturlaub_vorjahr = Convert.ToDouble(Reader["resturlaub_vorjahr"]);
                 Reader.Close();
                 close_db();
 
@@ -592,7 +596,7 @@ namespace Stempeluhr2
                 comm.Parameters.Add("@monat", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = monat_global;
                 comm.Parameters.Add("@tag", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = tag_global;
 
-                resturlaub = jahresuhrlaub - Convert.ToDouble(comm.ExecuteScalar());
+                akt_resturlaub_berechnet = resturlaub_vorjahr + jahresuhrlaub - Convert.ToDouble(comm.ExecuteScalar());
                 close_db();
 
                 //bereits geplante Urlaubstage ermitteln
@@ -610,11 +614,15 @@ namespace Stempeluhr2
                 planurlaub = Convert.ToDouble(comm.ExecuteScalar());
                 close_db();
 
- 
-                Detailanzeige.Text = "Stundenkonto\r\n" + zeitkonto + "\r\n\r\n" +
-                                     "Stand der Stundenberechnung\r\n" + zeitkonto_berechnungsstand.ToLongDateString() + "\r\n\r\n" +
-                                    "Resturlaub bis Jahresende\r\n" + resturlaub + " Tage\r\n\r\n" +
-                                    "Davon bereits geplanter Urlaub\r\n" + planurlaub + " Tage\r\n\r\n" +
+
+                Detailanzeige.Text = "Zeitkonto Berechnungsstand\r\n" + zeitkonto_berechnungsstand.ToLongDateString() + "\r\n\r\n" +
+                                     "Stand des Stundenkontos zum Berechnungsstand\r\n" + zeitkonto + "\r\n\r\n" +
+                                     "_________________________\r\n\r\n\r\n" +
+                                     //(jahresuhrlaub + resturlaub_vorjahr) + " Tage Urlaub\r\n" +
+                                     "Urlaub für " + urlaubsjahr + "\r\n\r\n" +
+                                     +akt_resturlaub_berechnet + " Tage noch unverbraucht\r\n" +
+                                     planurlaub + " Tage davon bereits verplant\r\n" + 
+                                     (akt_resturlaub_berechnet - planurlaub) + " Tage noch offen\r\n" +
                                     "_________________________\r\n\r\n\r\n" +
                                     "Bonuszeiten ausgezahlt bis \r\n" + bonuskonto_ausgezahlt_bis.ToLongDateString() + "\r\n\r\n" +
                                     "Bonus bei der letzten Auszahlung\r\n" + bonuszeit_bei_letzter_auszahlung + " Stunden\r\n\r\n" 
