@@ -548,6 +548,7 @@ namespace Stempeluhr2
             double resturlaub_vorjahr = 0;
             //string bonuszeit_gesternabend = "";
             DateTime bonuskonto_ausgezahlt_bis;
+            bool detailanzeige_erlaubt = false;
 
             string bonuszeit_bei_letzter_auszahlung = "";
             double planurlaub = 0;
@@ -566,6 +567,7 @@ namespace Stempeluhr2
                 MySql.Data.MySqlClient.MySqlDataReader Reader = comm.ExecuteReader();
 
                 //Detailanzeige fuellen
+
                 Reader.Read();
                 name = Reader["vorname"] + " " + Reader["name"] + "";
                 zeitkonto = Reader["zeitkonto"] + "";
@@ -575,8 +577,18 @@ namespace Stempeluhr2
                 jahresuhrlaub = Convert.ToDouble(Reader["jahresurlaub"]);
                 urlaubsjahr = Reader["akt_urlaubsjahr"] + "";
                 resturlaub_vorjahr = Convert.ToDouble(Reader["resturlaub_vorjahr"]);
+                detailanzeige_erlaubt = (bool)Reader["detailanzeige_erlaubt"];
                 Reader.Close();
                 close_db();
+
+                //Abbuch falls dieser User keine Detailanzeige erlaubt
+                if (detailanzeige_erlaubt == false)
+                {
+                    log("Anzeige der Details wird abgebrochen. (detailanzeige für diese Person nicht erlaubt)");
+                    setstatus("error", "Detailanzeige für " + activeuser_global + " nicht aktiviert.");
+                    return false;
+                }
+
 
                 //Bonuszeit on the fly berechnen
                 //log("berechnebonuszeit");
