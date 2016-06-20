@@ -615,18 +615,23 @@ namespace Stempeluhr2
                 close_db();
 
 
-                Detailanzeige.Text = "Zeitkonto Berechnungsstand\r\n" + zeitkonto_berechnungsstand.ToLongDateString() + "\r\n\r\n" +
-                                     "Stand des Stundenkontos zum Berechnungsstand\r\n" + zeitkonto + "\r\n\r\n" +
+                Detailanzeige.Text = "Zeitkonto (Stand " + zeitkonto_berechnungsstand.ToShortDateString() + ")\r\n\r\n" +
+                                     
+                                      zeitkonto + " Stunden\r\n\r\n" +
+                                     
                                      "_________________________\r\n\r\n\r\n" +
-                                     //(jahresuhrlaub + resturlaub_vorjahr) + " Tage Urlaub\r\n" +
-                                     "Urlaub für " + urlaubsjahr + "\r\n\r\n" +
-                                     +akt_resturlaub_berechnet + " Tage noch unverbraucht\r\n" +
-                                     planurlaub + " Tage davon bereits verplant\r\n" + 
-                                     (akt_resturlaub_berechnet - planurlaub) + " Tage noch offen\r\n" +
-                                    "_________________________\r\n\r\n\r\n" +
-                                    "Bonuszeiten ausgezahlt bis \r\n" + bonuskonto_ausgezahlt_bis.ToLongDateString() + "\r\n\r\n" +
-                                    "Bonus bei der letzten Auszahlung\r\n" + bonuszeit_bei_letzter_auszahlung + " Stunden\r\n\r\n" 
-                                    //+ "Bonuszeit (Stand gestern Abend)\r\n" + bonuszeit_gesternabend + " Stunden"
+                                     
+                                     "Urlaub (" + urlaubsjahr + ")\r\n\r\n" +
+                                     
+                                     +akt_resturlaub_berechnet + " Tage unverbraucht\r\n\r\n" +
+                                     "(davon " +planurlaub + " verplant / " + (akt_resturlaub_berechnet - planurlaub) + " offen)\r\n\r\n" +
+                                     
+                                     "_________________________\r\n\r\n\r\n" +
+                                     "Bonuszeiten\r\n\r\n" +
+
+                                    "Ausgezahlt bis " + bonuskonto_ausgezahlt_bis.ToShortDateString() + "\r\n" +
+                                    "(" + bonuszeit_bei_letzter_auszahlung + " Stunden)\r\n\r\n" 
+                                    
                                     ;
 
                 //Stempelliste fuellen
