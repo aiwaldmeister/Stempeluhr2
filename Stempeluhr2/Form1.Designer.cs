@@ -30,11 +30,11 @@
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
-            System.Windows.Forms.ListViewItem listViewItem1 = new System.Windows.Forms.ListViewItem("123456 00:00", 0);
-            System.Windows.Forms.ListViewItem listViewItem2 = new System.Windows.Forms.ListViewItem("123456 00:00", 1);
-            System.Windows.Forms.ListViewItem listViewItem3 = new System.Windows.Forms.ListViewItem("123456 00:00", 0);
-            System.Windows.Forms.ListViewItem listViewItem4 = new System.Windows.Forms.ListViewItem("123456 00:00", 1);
-            System.Windows.Forms.ListViewItem listViewItem5 = new System.Windows.Forms.ListViewItem("123456 00:00", 2);
+            System.Windows.Forms.ListViewItem listViewItem1 = new System.Windows.Forms.ListViewItem(" 00:00 (123456)", 0);
+            System.Windows.Forms.ListViewItem listViewItem2 = new System.Windows.Forms.ListViewItem(" 00:00 (123456)", 1);
+            System.Windows.Forms.ListViewItem listViewItem3 = new System.Windows.Forms.ListViewItem(" 00:00 (123456)", 0);
+            System.Windows.Forms.ListViewItem listViewItem4 = new System.Windows.Forms.ListViewItem(" 00:00 (123456)", 1);
+            System.Windows.Forms.ListViewItem listViewItem5 = new System.Windows.Forms.ListViewItem(" 00:00 (123456)", 0);
             this.Zeitanzeige = new System.Windows.Forms.Label();
             this.MessageLabel = new System.Windows.Forms.Label();
             this.countdowntimer = new System.Windows.Forms.Timer(this.components);
@@ -69,9 +69,9 @@
             // 
             this.Zeitanzeige.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.Zeitanzeige.Font = new System.Drawing.Font("Courier New", 36F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Zeitanzeige.Location = new System.Drawing.Point(0, 749);
+            this.Zeitanzeige.Location = new System.Drawing.Point(0, 1029);
             this.Zeitanzeige.Name = "Zeitanzeige";
-            this.Zeitanzeige.Size = new System.Drawing.Size(1280, 51);
+            this.Zeitanzeige.Size = new System.Drawing.Size(1920, 51);
             this.Zeitanzeige.TabIndex = 0;
             this.Zeitanzeige.Text = "00:00";
             this.Zeitanzeige.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -83,7 +83,7 @@
             this.MessageLabel.Font = new System.Drawing.Font("Courier New", 36F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.MessageLabel.Location = new System.Drawing.Point(0, 55);
             this.MessageLabel.Name = "MessageLabel";
-            this.MessageLabel.Size = new System.Drawing.Size(1280, 84);
+            this.MessageLabel.Size = new System.Drawing.Size(1920, 84);
             this.MessageLabel.TabIndex = 1;
             this.MessageLabel.Text = "MessageLabel";
             this.MessageLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -106,7 +106,7 @@
             this.Codefeld.Font = new System.Drawing.Font("Courier New", 36F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Codefeld.Location = new System.Drawing.Point(0, 0);
             this.Codefeld.Name = "Codefeld";
-            this.Codefeld.Size = new System.Drawing.Size(1280, 55);
+            this.Codefeld.Size = new System.Drawing.Size(1920, 55);
             this.Codefeld.TabIndex = 2;
             this.Codefeld.Text = "000000";
             this.Codefeld.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
@@ -118,7 +118,7 @@
             this.countdownbar.Dock = System.Windows.Forms.DockStyle.Top;
             this.countdownbar.Location = new System.Drawing.Point(0, 139);
             this.countdownbar.Name = "countdownbar";
-            this.countdownbar.Size = new System.Drawing.Size(1280, 10);
+            this.countdownbar.Size = new System.Drawing.Size(1920, 10);
             this.countdownbar.TabIndex = 3;
             // 
             // Anzeige
@@ -137,7 +137,7 @@
             // 
             this.Datumsanzeige.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.Datumsanzeige.Font = new System.Drawing.Font("Courier New", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Datumsanzeige.Location = new System.Drawing.Point(1104, 768);
+            this.Datumsanzeige.Location = new System.Drawing.Point(1744, 1048);
             this.Datumsanzeige.Name = "Datumsanzeige";
             this.Datumsanzeige.Size = new System.Drawing.Size(176, 32);
             this.Datumsanzeige.TabIndex = 0;
@@ -148,16 +148,18 @@
             // 
             this.Stempelicons.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("Stempelicons.ImageStream")));
             this.Stempelicons.TransparentColor = System.Drawing.Color.Transparent;
-            this.Stempelicons.Images.SetKeyName(0, "einstempeln.gif");
-            this.Stempelicons.Images.SetKeyName(1, "ausstempeln.gif");
+            this.Stempelicons.Images.SetKeyName(0, "Start.jpg");
+            this.Stempelicons.Images.SetKeyName(1, "Player Stop.jpg");
             this.Stempelicons.Images.SetKeyName(2, "storniert.gif");
+            this.Stempelicons.Images.SetKeyName(3, "einstempeln.gif");
+            this.Stempelicons.Images.SetKeyName(4, "ausstempeln.gif");
             // 
             // Stempelliste
             // 
             this.Stempelliste.BackColor = System.Drawing.Color.White;
             this.Stempelliste.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.Stempelliste.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.Stempelliste.Font = new System.Drawing.Font("Courier New", 27.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Stempelliste.Font = new System.Drawing.Font("Courier New", 24F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Stempelliste.Items.AddRange(new System.Windows.Forms.ListViewItem[] {
             listViewItem1,
             listViewItem2,
@@ -167,7 +169,7 @@
             this.Stempelliste.Location = new System.Drawing.Point(0, 0);
             this.Stempelliste.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
             this.Stempelliste.Name = "Stempelliste";
-            this.Stempelliste.Size = new System.Drawing.Size(806, 535);
+            this.Stempelliste.Size = new System.Drawing.Size(854, 793);
             this.Stempelliste.SmallImageList = this.Stempelicons;
             this.Stempelliste.TabIndex = 5;
             this.Stempelliste.UseCompatibleStateImageBehavior = false;
@@ -177,11 +179,11 @@
             // 
             this.Detailanzeige.BackColor = System.Drawing.SystemColors.Window;
             this.Detailanzeige.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.Detailanzeige.Font = new System.Drawing.Font("Courier New", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Detailanzeige.Font = new System.Drawing.Font("Courier New", 24F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Detailanzeige.Location = new System.Drawing.Point(0, 0);
             this.Detailanzeige.Margin = new System.Windows.Forms.Padding(0);
             this.Detailanzeige.Name = "Detailanzeige";
-            this.Detailanzeige.Size = new System.Drawing.Size(456, 585);
+            this.Detailanzeige.Size = new System.Drawing.Size(1048, 865);
             this.Detailanzeige.TabIndex = 6;
             this.Detailanzeige.Text = "Stundenkonto\r\n00.00\r\n\r\nStand der Stundenberechnung\r\n01.01.2016\r\n\r\nResturlaub bis " +
     "Jahresende\r\n00.00\r\n\r\nBereits geplante Urlaubstage\r\n00.00";
@@ -200,7 +202,7 @@
             this.tabControl1.Padding = new System.Drawing.Point(0, 0);
             this.tabControl1.RightToLeft = System.Windows.Forms.RightToLeft.No;
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(1280, 600);
+            this.tabControl1.Size = new System.Drawing.Size(1920, 880);
             this.tabControl1.SizeMode = System.Windows.Forms.TabSizeMode.Fixed;
             this.tabControl1.TabIndex = 7;
             // 
@@ -223,7 +225,7 @@
             this.tabPage2.Margin = new System.Windows.Forms.Padding(0);
             this.tabPage2.Name = "tabPage2";
             this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage2.Size = new System.Drawing.Size(1272, 591);
+            this.tabPage2.Size = new System.Drawing.Size(1912, 871);
             this.tabPage2.TabIndex = 1;
             this.tabPage2.Text = "tabPage2";
             // 
@@ -242,8 +244,8 @@
             // 
             this.splitContainer1.Panel2.Controls.Add(this.splitContainer2);
             this.splitContainer1.Panel2.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.splitContainer1.Size = new System.Drawing.Size(1266, 585);
-            this.splitContainer1.SplitterDistance = 456;
+            this.splitContainer1.Size = new System.Drawing.Size(1906, 865);
+            this.splitContainer1.SplitterDistance = 1048;
             this.splitContainer1.TabIndex = 0;
             // 
             // splitContainer2
@@ -263,8 +265,8 @@
             // 
             this.splitContainer2.Panel2.Controls.Add(this.Stempelliste);
             this.splitContainer2.Panel2.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.splitContainer2.Size = new System.Drawing.Size(806, 585);
-            this.splitContainer2.SplitterDistance = 46;
+            this.splitContainer2.Size = new System.Drawing.Size(854, 865);
+            this.splitContainer2.SplitterDistance = 68;
             this.splitContainer2.TabIndex = 6;
             // 
             // label1
@@ -274,7 +276,7 @@
             this.label1.Font = new System.Drawing.Font("Courier New", 20.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label1.Location = new System.Drawing.Point(0, 0);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(806, 46);
+            this.label1.Size = new System.Drawing.Size(854, 68);
             this.label1.TabIndex = 0;
             this.label1.Text = "Heutige Stempelungen";
             this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -284,7 +286,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.White;
-            this.ClientSize = new System.Drawing.Size(1280, 800);
+            this.ClientSize = new System.Drawing.Size(1920, 1080);
             this.Controls.Add(this.tabControl1);
             this.Controls.Add(this.Datumsanzeige);
             this.Controls.Add(this.Zeitanzeige);

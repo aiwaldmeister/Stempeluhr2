@@ -290,7 +290,7 @@ namespace Stempeluhr2
             else if (zielstatus == "error")
             {
                 Codefeld.Enabled = false;
-                message(statusmeldung, Color.IndianRed);
+                message(statusmeldung, Color.LightCoral);
                 Anzeige.Text = "";
                 status_global = "error";
                 activeuser_global = "";
@@ -651,7 +651,7 @@ namespace Stempeluhr2
                 Stempelliste.Items.Clear();
                 open_db();
                 comm.Parameters.Clear();
-                comm.CommandText = "SELECT * FROM stamps where userid=@userid "+
+                comm.CommandText = "SELECT * FROM stamps where userid=@userid AND storniert=0 "+
                                     "AND jahr =@jahr AND monat = @monat AND tag = @tag AND art in ('ab','an') "+
                                     "ORDER BY jahr ASC, monat ASC, tag ASC, stunde ASC, minute ASC, sekunde ASC, art ASC";
 
@@ -672,7 +672,7 @@ namespace Stempeluhr2
                     string dbart = Reader["art"] + "";
                     bool dbstorniert = (bool)Reader["storniert"];
 
-                    string[] row = {dbtask + " " + dbstunde + ":" + dbminute};
+                    string[] row = {" " + dbstunde + ":" + dbminute + " (" + dbtask + ")"};
                     var listViewItem = new ListViewItem(row);
                     if(dbart == "an")
                     {
@@ -682,6 +682,7 @@ namespace Stempeluhr2
                         listViewItem.ImageIndex = 1;
                     }
 
+                    //stornierte eigentlich vom statement her ausgeschlossen, aber falls sich das mal aendern sollte...
                     if (dbstorniert == true)
                     {
                         listViewItem.ImageIndex = 2;
