@@ -940,14 +940,15 @@ namespace Stempeluhr2
             string letztestempelung_sekunde =  "";
             string letztestempelung_dezimalminuten =  "";
 
-
+            //TODO: Fehler... Die erste Stempelung des Tages verursacht erst noch eine Abstempelung des vorigen
+            //TODO: das autoabstempeln setzt scheinbar die task nicht richtig zurueck?
 
 
 
 
             open_db();
             comm.Parameters.Clear();
-            comm.CommandText = "SELECT EXISTS(SELECT 1 FROM stamps where userid=@userid AND tag=@tag AND monat=@monat AND jahr = @jahr)";
+            comm.CommandText = "SELECT EXISTS(SELECT 1 FROM stamps where userid=@userid AND storniert = 0 AND tag=@tag AND monat=@monat AND jahr = @jahr)";
 
             comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = usercode;
             comm.Parameters.Add("@jahr", MySql.Data.MySqlClient.MySqlDbType.VarChar, 4).Value = jahr_global;
@@ -1054,7 +1055,7 @@ namespace Stempeluhr2
                         //die aktive Task des benutzers nach der autoabstempelung auf "" setzen
                         open_db();
                         comm.Parameters.Clear();
-                        comm.CommandText = "UPDATE user SET task='' where userid = @userid";
+                        comm.CommandText = "UPDATE user SET currenttask='' where userid = @userid";
 
                         comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = usercode;
 
