@@ -642,18 +642,18 @@ namespace Stempeluhr2
                                      
                                       zeitkonto + " Stunden\r\n\r\n" +
                                      
-                                     "_________________________\r\n\r\n\r\n" +
+                                     "_________________________\r\n\r\n" +
                                      
                                      "Urlaub (" + urlaubsjahr + ")\r\n\r\n" +
                                      
                                      +akt_resturlaub_berechnet + " Tage unverbraucht\r\n\r\n" +
                                      "(davon " +planurlaub + " verplant / " + (akt_resturlaub_berechnet - planurlaub) + " offen)\r\n\r\n" +
                                      
-                                     "_________________________\r\n\r\n\r\n" +
+                                     "_________________________\r\n\r\n" +
                                      "Bonuszeiten\r\n\r\n" +
 
                                     "Ausgezahlt bis " + bonuskonto_ausgezahlt_bis.ToShortDateString() + "\r\n" +
-                                    "(" + bonuszeit_bei_letzter_auszahlung + " Stunden)\r\n\r\n" 
+                                    "(" + bonuszeit_bei_letzter_auszahlung + " Stunden)" 
                                     
                                     ;
 
