@@ -67,6 +67,9 @@ namespace Stempeluhr2
             //Datenbank initialisieren
             init_db(dbserverconf_global, dbnameconf_global, dbuserconf_global, dbpwconf_global);
 
+            //Timer-Event einmal auslösen, damit die Zeitvariablen etc. richtig initialisiert sind
+            uhrtimer_Tick(this,null);
+
             //Status Ready setzen
             setstatus("ready", "");
 
@@ -235,7 +238,7 @@ namespace Stempeluhr2
             {
                 stopCountdown();
                 Codefeld.Text = "";
-                message("Bitte Personencode scannen",Color.LightGreen);
+                message("Bereit zum Anmelden",Color.LightGreen);
                 Anzeige.Text = "";
                 Stempelliste.Visible = false;
                 Detailanzeige.Visible = false;
@@ -247,6 +250,11 @@ namespace Stempeluhr2
                 Codefeld.Focus();
                 log("Status auf 'ready' gesetzt.\r\n"); //zeilenumbruch zur optischen Trennung einzelner vorgänge im logfile
 
+            }
+            else if(zielstatus == "wait") //zwischenstatus (damit der user weiss es passiert noch was)
+            {
+                stopCountdown();
+                message(statusmeldung, Color.Gold);
             }
             else if (zielstatus == "eingeloggt")
             {
@@ -266,7 +274,7 @@ namespace Stempeluhr2
                 status_global = "eingeloggt";
                 message(statusmeldung, Color.LightSkyBlue);
                 log("Status auf 'eingeloggt' gesetzt. (" + statusmeldung + ")");
-                setCountdown(10);
+                setCountdown(8);
 
             }
             else if (zielstatus == "gestempelt")
@@ -311,7 +319,7 @@ namespace Stempeluhr2
                 Codefeld.Text = "";
                 Codefeld.Focus();
                 log("Status auf 'userinfos' gesetzt. (" + statusmeldung + ")");
-                setCountdown(10);
+                setCountdown(12);
             }
 
         }
@@ -363,7 +371,7 @@ namespace Stempeluhr2
             else if (!int.TryParse(code, out tmpcode))
             {
 
-                setstatus("error", "Code '" + code + "' ist keine Zahl): ");
+                setstatus("error", "Code '" + code + "' ist keine Zahl: ");
             }
             else if (code.StartsWith("999"))
             {
@@ -392,6 +400,9 @@ namespace Stempeluhr2
 
         private void progresscode(string code, string typ)
         {
+            //wartemeldung während die entsprechenden aktionen erledigt werden
+            setstatus("wait","Bitte einen Moment warten...");
+
             if ((status_global == "ready") || (status_global == "gestempelt"))
             {
                 if (typ == "person")
@@ -627,7 +638,7 @@ namespace Stempeluhr2
                 close_db();
 
 
-                Detailanzeige.Text = "Zeitkonto (Stand " + zeitkonto_berechnungsstand.ToShortDateString() + ")\r\n\r\n" +
+                Detailanzeige.Text = "\r\nZeitkonto (Stand " + zeitkonto_berechnungsstand.ToShortDateString() + ")\r\n\r\n" +
                                      
                                       zeitkonto + " Stunden\r\n\r\n" +
                                      
@@ -918,6 +929,22 @@ namespace Stempeluhr2
             MySql.Data.MySqlClient.MySqlDataReader Reader;
             int heutebereitsgestempelt = 0;
             bool fehlerflag = false;
+
+            string letztestempelung_art = "";
+            string letztestempelung_auftrag = "";
+            string letztestempelung_jahr = "";
+            string letztestempelung_monat =  "";
+            string letztestempelung_tag = "";
+            string letztestempelung_stunde = "";
+            string letztestempelung_minute =  "";
+            string letztestempelung_sekunde =  "";
+            string letztestempelung_dezimalminuten =  "";
+
+
+
+
+
+
             open_db();
             comm.Parameters.Clear();
             comm.CommandText = "SELECT EXISTS(SELECT 1 FROM stamps where userid=@userid AND tag=@tag AND monat=@monat AND jahr = @jahr)";
@@ -973,15 +1000,19 @@ namespace Stempeluhr2
                     Reader = comm.ExecuteReader();
                     bool Satzvorhanden = Reader.Read();
 
-                    string letztestempelung_art = Reader["art"] + "";
-                    string letztestempelung_auftrag = Reader["task"] + "";
-                    string letztestempelung_jahr = Reader["jahr"] + "";
-                    string letztestempelung_monat = Reader["monat"] + "";
-                    string letztestempelung_tag = Reader["tag"] + "";
-                    string letztestempelung_stunde = Reader["stunde"] + "";
-                    string letztestempelung_minute = Reader["minute"] + "";
-                    string letztestempelung_sekunde = Reader["sekunde"] + "";
-                    string letztestempelung_dezimalminuten = Reader["dezimal"] + "";
+                    if (Satzvorhanden)
+                    {
+                        letztestempelung_art = Reader["art"] + "";
+                        letztestempelung_auftrag = Reader["task"] + "";
+                        letztestempelung_jahr = Reader["jahr"] + "";
+                        letztestempelung_monat = Reader["monat"] + "";
+                        letztestempelung_tag = Reader["tag"] + "";
+                        letztestempelung_stunde = Reader["stunde"] + "";
+                        letztestempelung_minute = Reader["minute"] + "";
+                        letztestempelung_sekunde = Reader["sekunde"] + "";
+                        letztestempelung_dezimalminuten = Reader["dezimal"] + "";
+                    }
+                    
                     Reader.Close();
                     close_db();
 
