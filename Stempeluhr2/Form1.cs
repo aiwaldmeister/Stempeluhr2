@@ -410,7 +410,7 @@ namespace Stempeluhr2
                     einloggen(code);
                 }else
                 {   //unerwarteter codetyp (person erwartet)
-                    setstatus("error", "Bitte zuerst einloggen.");
+                    setstatus("error", "Bitte zuerst anmelden.");
                 }
             }else if ((status_global == "eingeloggt") || (status_global == "userinfos"))
             {
