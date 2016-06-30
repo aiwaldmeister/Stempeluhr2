@@ -557,6 +557,7 @@ namespace Stempeluhr2
             double jahresuhrlaub = 0;
             string urlaubsjahr = "";
             double resturlaub_vorjahr = 0;
+            double wochenarbeitszeit = 0;
             //string bonuszeit_gesternabend = "";
             DateTime bonuskonto_ausgezahlt_bis;
             bool detailanzeige_erlaubt = false;
@@ -588,6 +589,7 @@ namespace Stempeluhr2
                 jahresuhrlaub = Convert.ToDouble(Reader["jahresurlaub"]);
                 urlaubsjahr = Reader["akt_urlaubsjahr"] + "";
                 resturlaub_vorjahr = Convert.ToDouble(Reader["resturlaub_vorjahr"]);
+                wochenarbeitszeit = Convert.ToDouble(Reader["wochenarbeitszeit"]);
                 detailanzeige_erlaubt = (bool)Reader["detailanzeige_erlaubt"];
                 Reader.Close();
                 close_db();
@@ -1377,7 +1379,7 @@ namespace Stempeluhr2
         }
 
         private double ermittleSollZeit(string usercode, string berechnungsjahr, string berechnungsmonat, string berechnungstag)
-        {   //sollzeit ermitteln (persoenlicher kalendereintrag > allgemeiner kalendereintrag > fallback(wochenende 0, sonst 7,2)
+        {   //sollzeit ermitteln (persoenlicher kalendereintrag > allgemeiner kalendereintrag > fallback(wochenende 0, sonst fuenftel der wochenarbeitszeit)
 
             log("ermittle Soll-Zeit...");
             funktionstiefe_global++;
@@ -1440,8 +1442,25 @@ namespace Stempeluhr2
                     }
                     else
                     {
-                        sollzeit = 7.2;
-                        sollzeitquelle = "normaler Werktag";
+                        double this_wochenarbeitszeit = 0;
+
+                        open_db();
+                        comm.Parameters.Clear();
+                        comm.CommandText = "SELECT wochenarbeitszeit FROM user WHERE userid=@userid";
+
+                        comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = usercode;
+
+                        try
+                        {
+                            this_wochenarbeitszeit = double.Parse(comm.ExecuteScalar() + "");
+                        }
+                        catch (Exception ex) { log(ex.Message); }
+
+                        close_db();
+
+                        //normaler Werktag -> sollzeit ist ein fuenftel der wochenarbeitszeit des Mitarbeites
+                        sollzeit = this_wochenarbeitszeit / 5;
+                        sollzeitquelle = "Normaler Werktag -> Wochenarbeitszeit (" + this_wochenarbeitszeit + ") durch 5";
                     }
                 }
             }
