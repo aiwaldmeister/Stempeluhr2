@@ -600,13 +600,7 @@ namespace Stempeluhr2
                     return false;
                 }
 
-
-                //Bonuszeit on the fly berechnen
-                //log("berechnebonuszeit");
-                //DateTime datumgestern = DateTime.ParseExact(jahr_global + monat_global + tag_global, "yyyyMMdd", null).AddDays(-1);
-                //bonuszeit_gesternabend = ermittlebonuszeit(activeuser_global,bonuskonto_ausgezahlt_bis.AddDays(1),datumgestern).ToString();
-
-
+                
                 //Resturlaub ermitteln
                 log("ermittleresturlaub");
                 open_db();
@@ -710,46 +704,6 @@ namespace Stempeluhr2
             setstatus("userinfos", "Details zu " + name);
             funktionstiefe_global--;
             return true;
-        }
-
-        private double ermittlebonuszeit(string user, DateTime startdatum, DateTime enddatum)
-        {
-            DateTime berechnungsdatum = startdatum;
-            double summe_bonuszeiten = 0;
-            log("ermittle Bonuszeit");
-            funktionstiefe_global++;
-
-            while(berechnungsdatum <= enddatum)
-            {   //für jeden tag verrechnete stunden und sollzeit ermitteln
-                double verrechnet_heute = 0;
-                double sollzeit_heute = 0;
-                sollzeit_heute = ermittleSollZeit(user, berechnungsdatum.Year.ToString("D4"), berechnungsdatum.Month.ToString("D2"), berechnungsdatum.Day.ToString("D2"));
-                try
-                {
-                    open_db();
-                    comm.Parameters.Clear();
-                    comm.CommandText = "SELECT IFNULL(SUM(stunden),0) FROM verrechnung WHERE person=@person "+
-                                    "AND jahr = @jahr AND monat = @monat AND TAG = @tag AND storniert = 0";
-
-                    comm.Parameters.Add("@person", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = user;
-                    comm.Parameters.Add("@jahr", MySql.Data.MySqlClient.MySqlDbType.VarChar, 4).Value = berechnungsdatum.Year.ToString("D4");
-                    comm.Parameters.Add("@monat", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = berechnungsdatum.Month.ToString("D2");
-                    comm.Parameters.Add("@tag", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = berechnungsdatum.Day.ToString("D2");
-
-                    verrechnet_heute = Convert.ToDouble(comm.ExecuteScalar());
-                    close_db();
-                }
-                catch (Exception ex) { log(ex.Message); }
-                
-
-                summe_bonuszeiten = summe_bonuszeiten + verrechnet_heute - (sollzeit_heute * 0.55);
-
-
-                berechnungsdatum = berechnungsdatum.AddDays(1);
-            }
-
-            funktionstiefe_global--;
-            return summe_bonuszeiten;
         }
 
         private bool einloggen(string usercode)
