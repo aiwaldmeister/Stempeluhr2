@@ -1124,6 +1124,28 @@ namespace Stempeluhr2
             double Pausenzeit_tmp = 0;
             string Fehler = "";
             
+            //grenzen der kernzeit aus der config-tabelle holen
+            double start_morgens = 0;
+            double start_mittagszeit = 0;
+            double ende_mittagszeit = 0;
+            double ende_abends = 0;
+            open_db();
+            comm.Parameters.Clear();
+            comm.CommandText = "SELECT kernzeit1,kernzeit2,kernzeit3,kernzeit4 FROM config";
+            MySql.Data.MySqlClient.MySqlDataReader Reader = comm.ExecuteReader();
+            try
+            {
+                Reader.Read();
+
+                start_morgens = double.Parse(Reader["kernzeit1"] + "");
+                start_mittagszeit = double.Parse(Reader["kernzeit2"] + "");
+                ende_mittagszeit = double.Parse(Reader["kernzeit3"] + "");
+                ende_abends = double.Parse(Reader["kernzeit4"] + "");
+            }
+            catch (Exception ex) { log(ex.Message); }
+            Reader.Close();
+            close_db();
+
             open_db();
             comm.Parameters.Clear();
             //die sortierung soll sicherstellen dass immer die zusammenpassenden an+abstempelungen nacheinander kommen
@@ -1136,7 +1158,7 @@ namespace Stempeluhr2
             comm.Parameters.Add("@tag", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = berechnungstag;
             
             log("SQL:" + comm.CommandText);
-            MySql.Data.MySqlClient.MySqlDataReader Reader = comm.ExecuteReader();
+            Reader = comm.ExecuteReader();
 
             //jeder schleifendurchlauf betrachtet ein paar aus an- und abstempelung
             while (Reader.Read())
@@ -1187,126 +1209,128 @@ namespace Stempeluhr2
                     Pausenzeit_tmp = Pausenzeit_tmp + ab_uhrzeit_dezimal - an_uhrzeit_dezimal;
                 }
 
-                
 
-                if(an_task != "888000")
+
+                if (an_task != "888000")
                 {   //keine Leerlaufstempelung -> Zeit komplett auf Istzeit anrechnen
                     Istzeit_tmp = Istzeit_tmp + ab_uhrzeit_dezimal - an_uhrzeit_dezimal;
                 }
                 else
-                {   
-                //////Leerlaufstempelung -> ///////////start der Fallunterscheidung ////////////////
-                //Leerlaufzeiten zwischen 12:30-13:30 die nicht zur IstZeit angerechnet werden, werden dafür auf die Pausenzeit angerechnet
+                {
+                    //////Leerlaufstempelung -> ///////////start der Fallunterscheidung ////////////////
+                    //Leerlaufzeiten in der Mittagszeit die nicht zur IstZeit angerechnet werden, werden dafür auf die Pausenzeit angerechnet
 
-                    //Fall 1: Anstempelung vor 8, Abstempelung vor 8 -> nix anrechnen
-                    if(an_uhrzeit_dezimal <= 8 && ab_uhrzeit_dezimal <= 8)
-                    {   
-                    }else
-
-                    //Fall 2: Anstempelung vor 8, Abstempelung Vormittags -> 8 bis Abstempelung anrechnen
-                    if(an_uhrzeit_dezimal <= 8 && ab_uhrzeit_dezimal >= 8 &&ab_uhrzeit_dezimal <= 12.5)
+                    //Fall 1: Anstempelung vor start_morgens, Abstempelung vor start_morgens -> nix anrechnen
+                    if (an_uhrzeit_dezimal <= start_morgens && ab_uhrzeit_dezimal <= start_morgens)
                     {
-                        Istzeit_tmp = Istzeit_tmp + ab_uhrzeit_dezimal - 8;
-                    }else
-
-                    //Fall 3: Anstempelung vor 8, Abstempelung Mittags -> 8 bis 12:30 anrechnen
-                    if (an_uhrzeit_dezimal <= 8 && ab_uhrzeit_dezimal >= 12.5 && ab_uhrzeit_dezimal <= 13.5)
-                    {
-                        Istzeit_tmp = Istzeit_tmp + 12.5 - 8;
-                        Pausenzeit_tmp = Pausenzeit_tmp + ab_uhrzeit_dezimal - 12.5;
                     }
                     else
 
-                    //Fall 4: Anstempelung vor 8, Abstempelung Nachmittags -> 8 bis Abstempelung anrechnen und 1 Std abziehen
-                    if (an_uhrzeit_dezimal <= 8 && ab_uhrzeit_dezimal >= 13.5 && ab_uhrzeit_dezimal <= 17.5)
+                    //Fall 2: Anstempelung vor start_morgens, Abstempelung Vormittags -> start_morgens bis Abstempelung anrechnen
+                    if (an_uhrzeit_dezimal <= start_morgens && ab_uhrzeit_dezimal >= start_morgens && ab_uhrzeit_dezimal <= start_mittagszeit)
                     {
-                        Istzeit_tmp = Istzeit_tmp + ab_uhrzeit_dezimal - 8 - 1;
-                        Pausenzeit_tmp = Pausenzeit_tmp + 1;
+                        Istzeit_tmp = Istzeit_tmp + ab_uhrzeit_dezimal - start_morgens;
                     }
                     else
 
-                    //Fall 5: Anstempelung vor 8, Abstempelung nach 17:30 -> 8 bis 17:30 anrechnen und 1 Std abziehen
-                    if (an_uhrzeit_dezimal <= 8 && ab_uhrzeit_dezimal >= 17.5)
+                    //Fall 3: Anstempelung vor start_morgens, Abstempelung Mittags -> start_morgens bis start_mittagszeit anrechnen
+                    if (an_uhrzeit_dezimal <= start_morgens && ab_uhrzeit_dezimal >= start_mittagszeit && ab_uhrzeit_dezimal <= ende_mittagszeit)
                     {
-                        Istzeit_tmp = Istzeit_tmp + 17.5 - 8 - 1;
-                        Pausenzeit_tmp = Pausenzeit_tmp + 1;
+                        Istzeit_tmp = Istzeit_tmp + start_mittagszeit - start_morgens;
+                        Pausenzeit_tmp = Pausenzeit_tmp + ab_uhrzeit_dezimal - start_mittagszeit;
+                    }
+                    else
+
+                    //Fall 4: Anstempelung vor start_morgens, Abstempelung Nachmittags -> start_morgens bis Abstempelung anrechnen und mittagszeit abziehen
+                    if (an_uhrzeit_dezimal <= start_morgens && ab_uhrzeit_dezimal >= ende_mittagszeit && ab_uhrzeit_dezimal <= ende_abends)
+                    {
+                        Istzeit_tmp = Istzeit_tmp + ab_uhrzeit_dezimal - start_morgens - (ende_mittagszeit - start_mittagszeit);
+                        Pausenzeit_tmp = Pausenzeit_tmp + (ende_mittagszeit - start_mittagszeit);
+                    }
+                    else
+
+                    //Fall 5: Anstempelung vor start_morgens, Abstempelung nach ende_abends -> start_morgens bis ende_abends anrechnen und mittagszeit abziehen
+                    if (an_uhrzeit_dezimal <= start_morgens && ab_uhrzeit_dezimal >= ende_abends)
+                    {
+                        Istzeit_tmp = Istzeit_tmp + ende_abends - start_morgens - (ende_mittagszeit - start_mittagszeit);
+                        Pausenzeit_tmp = Pausenzeit_tmp + (ende_mittagszeit - start_mittagszeit);
                     }
                     else
 
                     //Fall 6: Anstempelung Vormittags, Abstempelung Vormittags -> Anstempelung bis Abstempelung voll anrechnen
-                    if (an_uhrzeit_dezimal >= 8 && an_uhrzeit_dezimal <= 12.5 && ab_uhrzeit_dezimal >= 8 && ab_uhrzeit_dezimal <= 12.5)
+                    if (an_uhrzeit_dezimal >= start_morgens && an_uhrzeit_dezimal <= start_mittagszeit && ab_uhrzeit_dezimal >= start_morgens && ab_uhrzeit_dezimal <= start_mittagszeit)
                     {
                         Istzeit_tmp = Istzeit_tmp + ab_uhrzeit_dezimal - an_uhrzeit_dezimal;
                     }
                     else
 
-                    //Fall 7: Anstempelung Vormittags, Abstempelung Mittags -> Anstempelung bis 12:30 anrechnen
-                    if (an_uhrzeit_dezimal >= 8 && an_uhrzeit_dezimal <= 12.5 && ab_uhrzeit_dezimal >= 12.5 && ab_uhrzeit_dezimal <= 13.5)
+                    //Fall 7: Anstempelung Vormittags, Abstempelung Mittags -> Anstempelung bis start_mittagszeit anrechnen
+                    if (an_uhrzeit_dezimal >= start_morgens && an_uhrzeit_dezimal <= start_mittagszeit && ab_uhrzeit_dezimal >= start_mittagszeit && ab_uhrzeit_dezimal <= ende_mittagszeit)
                     {
-                        Istzeit_tmp = Istzeit_tmp + 12.5 - an_uhrzeit_dezimal;
-                        Pausenzeit_tmp = Pausenzeit_tmp + ab_uhrzeit_dezimal - 12.5;
+                        Istzeit_tmp = Istzeit_tmp + start_mittagszeit - an_uhrzeit_dezimal;
+                        Pausenzeit_tmp = Pausenzeit_tmp + ab_uhrzeit_dezimal - start_mittagszeit;
                     }
                     else
 
-                    //Fall 8: Anstempelung Vormittags, Abstempelung Nachmittags -> Anstempelung bis Abstempelung anrechnen und 1 Std abziehen
-                    if (an_uhrzeit_dezimal >= 8 && an_uhrzeit_dezimal <= 12.5 && ab_uhrzeit_dezimal >= 13.5 && ab_uhrzeit_dezimal <= 17.5)
+                    //Fall 8: Anstempelung Vormittags, Abstempelung Nachmittags -> Anstempelung bis Abstempelung anrechnen und mittagszeit abziehen
+                    if (an_uhrzeit_dezimal >= start_morgens && an_uhrzeit_dezimal <= start_mittagszeit && ab_uhrzeit_dezimal >= ende_mittagszeit && ab_uhrzeit_dezimal <= ende_abends)
                     {
-                        Istzeit_tmp = Istzeit_tmp + ab_uhrzeit_dezimal - an_uhrzeit_dezimal - 1;
-                        Pausenzeit_tmp = Pausenzeit_tmp + 1;
+                        Istzeit_tmp = Istzeit_tmp + ab_uhrzeit_dezimal - an_uhrzeit_dezimal - (ende_mittagszeit - start_mittagszeit);
+                        Pausenzeit_tmp = Pausenzeit_tmp + (ende_mittagszeit - start_mittagszeit);
                     }
                     else
 
-                    //Fall 9: Anstempelung Vormittags, Abstempelung nach 17:30 -> Anstempelung bis 17:30 anrechnen und 1 Std abziehen
-                    if (an_uhrzeit_dezimal >= 8 && an_uhrzeit_dezimal <= 12.5 && ab_uhrzeit_dezimal >= 17.5)
+                    //Fall 9: Anstempelung Vormittags, Abstempelung nach ende_abends -> Anstempelung bis ende_abends anrechnen und mittagszeit abziehen
+                    if (an_uhrzeit_dezimal >= start_morgens && an_uhrzeit_dezimal <= start_mittagszeit && ab_uhrzeit_dezimal >= ende_abends)
                     {
-                        Istzeit_tmp = Istzeit_tmp + 17.5 - an_uhrzeit_dezimal -1;
-                        Pausenzeit_tmp = Pausenzeit_tmp + 1;
+                        Istzeit_tmp = Istzeit_tmp + ende_abends - an_uhrzeit_dezimal - (ende_mittagszeit - start_mittagszeit);
+                        Pausenzeit_tmp = Pausenzeit_tmp + (ende_mittagszeit - start_mittagszeit);
                     }
                     else
 
                     //Fall 10: Anstempelung Mittags, Abstempelung Mittags -> nix anrechnen
-                    if (an_uhrzeit_dezimal >= 12.5 && an_uhrzeit_dezimal <= 13.5 && ab_uhrzeit_dezimal >= 12.5 && ab_uhrzeit_dezimal <= 13.5)
+                    if (an_uhrzeit_dezimal >= start_mittagszeit && an_uhrzeit_dezimal <= ende_mittagszeit && ab_uhrzeit_dezimal >= start_mittagszeit && ab_uhrzeit_dezimal <= ende_mittagszeit)
                     {
                         Pausenzeit_tmp = Pausenzeit_tmp + ab_uhrzeit_dezimal - an_uhrzeit_dezimal;
                     }
                     else
 
-                    //Fall 11: Anstempelung Mittags, Abstempelung Nachmittags -> 13:30 bis Abstempelung anrechnen
-                    if (an_uhrzeit_dezimal >= 12.5 && an_uhrzeit_dezimal <= 13.5 && ab_uhrzeit_dezimal >= 13.5 && ab_uhrzeit_dezimal <= 17.5)
+                    //Fall 11: Anstempelung Mittags, Abstempelung Nachmittags -> ende_mittagszeit bis Abstempelung anrechnen
+                    if (an_uhrzeit_dezimal >= start_mittagszeit && an_uhrzeit_dezimal <= ende_mittagszeit && ab_uhrzeit_dezimal >= ende_mittagszeit && ab_uhrzeit_dezimal <= ende_abends)
                     {
-                        Istzeit_tmp = Istzeit_tmp + ab_uhrzeit_dezimal - 13.5;
-                        Pausenzeit_tmp = Pausenzeit_tmp + 13.5 - an_uhrzeit_dezimal;
+                        Istzeit_tmp = Istzeit_tmp + ab_uhrzeit_dezimal - ende_mittagszeit;
+                        Pausenzeit_tmp = Pausenzeit_tmp + ende_mittagszeit - an_uhrzeit_dezimal;
                     }
                     else
 
-                    //Fall 12: Anstempelung Mittags, Abstempelung nach 17:30 -> 13:30 bis 17:30 anrechnen
-                    if (an_uhrzeit_dezimal >= 12.5 && an_uhrzeit_dezimal <= 13.5 && ab_uhrzeit_dezimal >= 17.5)
+                    //Fall 12: Anstempelung Mittags, Abstempelung nach ende_abends -> ende_mittagszeit bis ende_abends anrechnen
+                    if (an_uhrzeit_dezimal >= start_mittagszeit && an_uhrzeit_dezimal <= ende_mittagszeit && ab_uhrzeit_dezimal >= ende_abends)
                     {
-                        Istzeit_tmp = Istzeit_tmp + 17.5 - 13.5;
-                        Pausenzeit_tmp = Pausenzeit_tmp + 13.5 - an_uhrzeit_dezimal;
+                        Istzeit_tmp = Istzeit_tmp + ende_abends - ende_mittagszeit;
+                        Pausenzeit_tmp = Pausenzeit_tmp + ende_mittagszeit - an_uhrzeit_dezimal;
                     }
                     else
 
                     //Fall 13: Anstempelung Nachmittags, Abstempelung Nachmittags -> Anstempelung bis Abstempelung voll anrechnen
-                    if (an_uhrzeit_dezimal >= 13.5 && an_uhrzeit_dezimal <= 17.5 && ab_uhrzeit_dezimal >= 13.5 && ab_uhrzeit_dezimal <= 17.5)
+                    if (an_uhrzeit_dezimal >= ende_mittagszeit && an_uhrzeit_dezimal <= ende_abends && ab_uhrzeit_dezimal >= ende_mittagszeit && ab_uhrzeit_dezimal <= ende_abends)
                     {
                         Istzeit_tmp = Istzeit_tmp + ab_uhrzeit_dezimal - an_uhrzeit_dezimal;
                     }
                     else
 
-                    //Fall 14: Anstempelung Nachmittags, Abstempelung nach 17:30 -> Anstempelung bis 17:30 anrechnen
-                    if (an_uhrzeit_dezimal >= 13.5 && an_uhrzeit_dezimal <= 17.5 && ab_uhrzeit_dezimal >= 17.5)
+                    //Fall 14: Anstempelung Nachmittags, Abstempelung nach ende_abends -> Anstempelung bis ende_abends anrechnen
+                    if (an_uhrzeit_dezimal >= ende_mittagszeit && an_uhrzeit_dezimal <= ende_abends && ab_uhrzeit_dezimal >= ende_abends)
                     {
-                        Istzeit_tmp = Istzeit_tmp + 17.5 - an_uhrzeit_dezimal;
+                        Istzeit_tmp = Istzeit_tmp + ende_abends - an_uhrzeit_dezimal;
                     }
                     else
 
-                    //Fall 15: Anstempelung nach 17:30, Abstempelung nach 17:30 -> nix anrechnen
-                    if (an_uhrzeit_dezimal >= 17.5 && ab_uhrzeit_dezimal >= 17.5)
-                    {   }
+                    //Fall 15: Anstempelung nach ende_abends, Abstempelung nach ende_abends -> nix anrechnen
+                    if (an_uhrzeit_dezimal >= ende_abends && ab_uhrzeit_dezimal >= ende_abends)
+                    { }
 
-                ///////// Ende der Fallunterscheidungen bei Leerlaufstempelungen
-                    
+                    ///////// Ende der Fallunterscheidungen bei Leerlaufstempelungen
+
                 }
             }
             Reader.Close();
