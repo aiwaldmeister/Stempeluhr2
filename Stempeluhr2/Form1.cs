@@ -262,10 +262,22 @@ namespace Stempeluhr2
                 Codefeld.Enabled = true;
                 if (activetask_global != "")
                 {
-                    Anzeige.Text = "Eingestempelt auf " + activetask_global + ". Bisher " + activetask_zeitbisher_global + " Stunden";
-                }else
+                    if(activetask_global == "888000")
+                    {
+                        Anzeige.Text = "Status: Leerlauf\r\nbis jetzt " + activetask_zeitbisher_global + " Stunden (heute)";
+                    }
+                    else if(activetask_global == "888001")
+                    {
+                        Anzeige.Text = "Status: Pause\r\nbis jetzt " + activetask_zeitbisher_global + " Stunden (heute)";
+                    }
+                    else
+                    {
+                        Anzeige.Text = "Status: Eingestempelt auf Auftrag " + activetask_global + "\r\n(bis jetzt " + activetask_zeitbisher_global + " Stunden (insgesamt)";
+                    }
+                }
+                else
                 {
-                    Anzeige.Text = "Nicht eingestempelt";
+                    Anzeige.Text = "Status: Nicht eingestempelt.";
                 }
                 if (userwarnung_global != "")
                 {
@@ -493,7 +505,18 @@ namespace Stempeluhr2
             }
 
             close_db();
-            setstatus("gestempelt", user + " auf Auftrag " + auftrag + " eingestempelt.");
+
+            if (auftrag == "888000")
+            {
+                setstatus("gestempelt", "Status auf Leerlauf gesetzt.");
+            }else if(auftrag == "888001")
+            {
+                setstatus("gestempelt", "Status auf Pause gesetzt.");
+            }else
+            {
+                setstatus("gestempelt","Eingestempelt auf Auftrag: " + auftrag + ".");
+            }
+            
             funktionstiefe_global--;
             return true;
         }
@@ -828,6 +851,16 @@ namespace Stempeluhr2
             comm.Parameters.Clear();
             comm.CommandText = "SELECT IFNULL((SUM(stunde) * 100)  + (SUM(dezimal)),0) FROM stamps WHERE userid = @userid AND "+
                                 "task = @task AND art='ab' AND storniert = 0";
+
+            //falls es eine Pausen oder Leerlaufstempelung ist, nur die heutigen stempelungen betrachten...
+            if(activetask_global == "888000" || activetask_global == "888001")
+            {
+                comm.CommandText += " AND jahr=@jahr AND monat=@monat AND tag=@tag";
+                comm.Parameters.Add("@jahr", MySql.Data.MySqlClient.MySqlDbType.VarChar, 4).Value = jahr_global;
+                comm.Parameters.Add("@monat", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = monat_global;
+                comm.Parameters.Add("@tag", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = tag_global;
+            }
+
             comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = activeuser_global;
             comm.Parameters.Add("@task", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = activetask_global;
             
@@ -850,6 +883,15 @@ namespace Stempeluhr2
             comm.Parameters.Clear();
             comm.CommandText = "SELECT IFNULL((SUM(stunde) * 100)  + (SUM(dezimal)),0) FROM stamps WHERE userid = @userid AND " +
                                  "task = @task AND art='an' AND storniert = 0";
+
+            //falls es eine Pausen oder Leerlaufstempelung ist, nur die heutigen stempelungen betrachten...
+            if (activetask_global == "888000" || activetask_global == "888001")
+            {
+                comm.CommandText += " AND jahr=@jahr AND monat=@monat AND tag=@tag";
+                comm.Parameters.Add("@jahr", MySql.Data.MySqlClient.MySqlDbType.VarChar, 4).Value = jahr_global;
+                comm.Parameters.Add("@monat", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = monat_global;
+                comm.Parameters.Add("@tag", MySql.Data.MySqlClient.MySqlDbType.VarChar, 2).Value = tag_global;
+            }
 
             comm.Parameters.Add("@userid", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = activeuser_global;
             comm.Parameters.Add("@task", MySql.Data.MySqlClient.MySqlDbType.VarChar, 6).Value = activetask_global;
